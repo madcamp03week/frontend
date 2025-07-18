@@ -28,6 +28,7 @@ export interface WalletData {
   id: string;
   userId: string;
   address: string;
+  encryptedPrivateKey?: string; // 암호화된 Private Key
   network: 'polygon';
   createdAt: Date;
   updatedAt: Date;
@@ -112,6 +113,7 @@ export const saveWalletData = async (walletData: Omit<WalletData, 'id' | 'create
       network: walletData.network,
       isActive: walletData.isActive,
       ...(walletData.label && { label: walletData.label }),
+      ...(walletData.encryptedPrivateKey && { encryptedPrivateKey: walletData.encryptedPrivateKey }),
       id: walletRef.id,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

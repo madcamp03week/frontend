@@ -18,10 +18,11 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup } = useAuth();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setLoading(true);
     setError('');
     setSuccessMessage('');
@@ -29,10 +30,10 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         await signUp(email, password);
-        setSuccessMessage('회원가입이 완료되었습니다! 새로운 폴리곤 지갑이 생성되었습니다.');
-        // 잠시 후 홈페이지로 이동
+        setSuccessMessage('회원가입이 완료되었습니다! 지갑 설정 페이지로 이동합니다.');
+        // 잠시 후 지갑 설정 페이지로 이동
         setTimeout(() => {
-          router.push('/');
+          router.push('/wallet-setup');
         }, 2000);
       } else {
         await signIn(email, password);
@@ -93,7 +94,14 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push('/'); // 로그인 성공 시 홈페이지로 이동
+      
+      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
+      if (shouldRedirectToWalletSetup) {
+        setShouldRedirectToWalletSetup(false);
+        router.push('/wallet-setup');
+      } else {
+        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      }
     } catch (error: any) {
       console.error('Google 로그인 오류:', error);
       // 한국어 에러 메시지
@@ -140,7 +148,14 @@ export default function LoginPage() {
     try {
       const provider = new GithubAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push('/'); // 로그인 성공 시 홈페이지로 이동
+      
+      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
+      if (shouldRedirectToWalletSetup) {
+        setShouldRedirectToWalletSetup(false);
+        router.push('/wallet-setup');
+      } else {
+        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      }
     } catch (error: any) {
       console.error('GitHub 로그인 오류:', error);
       // 한국어 에러 메시지
@@ -217,13 +232,15 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-800 placeholder-gray-400 text-white rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-800 placeholder-gray-400 text-white rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>
+
+
 
           {error && (
             <div className="text-red-500 text-sm text-center">
@@ -279,7 +296,11 @@ export default function LoginPage() {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError('');
+                setSuccessMessage('');
+              }}
               className="text-blue-400 hover:text-blue-300"
             >
               {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
@@ -287,6 +308,8 @@ export default function LoginPage() {
           </div>
         </form>
       </div>
+
+
     </div>
   );
 } 

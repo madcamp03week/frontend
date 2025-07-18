@@ -2,15 +2,12 @@
 
 import { useState } from 'react';
 import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider,
-  User
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import type { Auth } from 'firebase/auth';
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -19,20 +16,28 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
+  const { signUp, signIn } = useAuth();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await signUp(email, password);
+        setSuccessMessage('회원가입이 완료되었습니다! 새로운 폴리곤 지갑이 생성되었습니다.');
+        // 잠시 후 홈페이지로 이동
+        setTimeout(() => {
+          router.push('/');
+        }, 2000);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signIn(email, password);
+        router.push('/'); // 로그인 성공 시 홈페이지로 이동
       }
-      router.push('/'); // 로그인 성공 시 홈페이지로 이동
     } catch (error: any) {
       console.error('로그인 오류:', error);
       // 한국어 에러 메시지
@@ -223,6 +228,12 @@ export default function LoginPage() {
           {error && (
             <div className="text-red-500 text-sm text-center">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="text-green-500 text-sm text-center">
+              {successMessage}
             </div>
           )}
 

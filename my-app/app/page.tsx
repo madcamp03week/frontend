@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import MadeForSection from '@/app/components/MadeForSection'
 import SubscribeFooter from './components/SubscribeFooter';
+import CompanyPage from './company/page';
+import Link from 'next/link';
 
 
 export default function Home() {
@@ -11,23 +13,24 @@ export default function Home() {
       {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
         <div className="text-2xl font-bold">
-          Block<span className="text-sky-400">NFT</span>
+         Chronos
         </div>
         <div className="space-x-8 text-sm text-gray-300 font-light">
-          <a href="#">Company</a>
-          <a href="#">Product</a>
-          <a href="#">Artist</a>
-          <a href="#">Wallet</a>
+          <Link href="/company">Company</Link>
+          <Link href="/product">Product</Link>
+          <Link href="/artist">Artist</Link>
+          <Link href="/wallet">Wallet</Link>
         </div>
       </nav>
 
       {/* 메인 텍스트 */}
       <section className="flex flex-col items-center justify-center mt-28 px-4 text-center">
-        <p className="text-lg italic text-gray-300 mb-2">A new era of</p>
+        <p className="text-lg italic text-gray-300 mb-2">당신의 기억을 영원히</p>
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
-          FINANCIAL EXPLORATION
+          FINANCIAL EXPLORATIONㄴ
         </h1>
       </section>
+      
 
 {/* 체인 이미지 애니메이션 */}
       <section className="mt-24 relative h-[500px] w-full flex items-center justify-center">
@@ -148,13 +151,6 @@ export default function Home() {
       <MadeForSection />
       {/* 구독 섹션 */}
       <SubscribeFooter />
-
-
-
-
-
-
-
     </main>
   );
 }

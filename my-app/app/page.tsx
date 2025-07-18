@@ -5,9 +5,12 @@ import MadeForSection from '@/app/components/MadeForSection'
 import SubscribeFooter from './components/SubscribeFooter';
 import CompanyPage from './company/page';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
 
 
 export default function Home() {
+  const { user, loading, logout } = useAuth();
+
   return (
     <main className="min-h-screen bg-black text-white font-sans overflow-hidden">
       {/* 네비게이션 */}
@@ -18,8 +21,23 @@ export default function Home() {
         <div className="space-x-8 text-sm text-gray-300 font-light">
           <Link href="/company">Company</Link>
           <Link href="/product">Product</Link>
-          <Link href="/artist">Artist</Link>
-          <Link href="/wallet">Wallet</Link>
+          <Link href="/new-chronos">New Chronos</Link>
+          <Link href="/my-chronos">My Chronos</Link>
+          {!loading && (
+            user ? (
+              <>
+                <Link href="/dashboard">Dashboard</Link>
+                <button
+                  onClick={logout}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/login">Login</Link>
+            )
+          )}
         </div>
       </nav>
 
@@ -27,7 +45,7 @@ export default function Home() {
       <section className="flex flex-col items-center justify-center mt-28 px-4 text-center">
         <p className="text-lg italic text-gray-300 mb-2">당신의 기억을 영원히</p>
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
-          FINANCIAL EXPLORATIONㄴ
+          FINANCIAL EXPLORATION
         </h1>
       </section>
       

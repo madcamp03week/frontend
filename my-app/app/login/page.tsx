@@ -91,14 +91,21 @@ export default function LoginPage() {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
       
-      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
-      if (shouldRedirectToWalletSetup) {
-        setShouldRedirectToWalletSetup(false);
-        router.push('/wallet-setup');
-      } else {
-        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      // OAuth 로그인 성공 후 사용자 프로필 확인 및 생성
+      if (result.user) {
+        console.log('Google 로그인 성공:', result.user.uid);
+        // AuthContext의 onAuthStateChanged에서 자동으로 프로필을 생성하므로
+        // 잠시 기다린 후 리다이렉트
+        setTimeout(() => {
+          if (shouldRedirectToWalletSetup) {
+            setShouldRedirectToWalletSetup(false);
+            router.push('/wallet-setup');
+          } else {
+            router.push('/'); // 기존 사용자는 홈페이지로 이동
+          }
+        }, 1000);
       }
     } catch (error: any) {
       console.error('Google 로그인 오류:', error);
@@ -144,14 +151,21 @@ export default function LoginPage() {
 
     try {
       const provider = new GithubAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
       
-      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
-      if (shouldRedirectToWalletSetup) {
-        setShouldRedirectToWalletSetup(false);
-        router.push('/wallet-setup');
-      } else {
-        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      // OAuth 로그인 성공 후 사용자 프로필 확인 및 생성
+      if (result.user) {
+        console.log('GitHub 로그인 성공:', result.user.uid);
+        // AuthContext의 onAuthStateChanged에서 자동으로 프로필을 생성하므로
+        // 잠시 기다린 후 리다이렉트
+        setTimeout(() => {
+          if (shouldRedirectToWalletSetup) {
+            setShouldRedirectToWalletSetup(false);
+            router.push('/wallet-setup');
+          } else {
+            router.push('/'); // 기존 사용자는 홈페이지로 이동
+          }
+        }, 1000);
       }
     } catch (error: any) {
       console.error('GitHub 로그인 오류:', error);

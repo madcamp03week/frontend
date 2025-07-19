@@ -110,7 +110,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               createdAt: new Date(profile.createdAt),
               updatedAt: new Date(profile.updatedAt),
             });
+          } else {
+            // 프로필이 없는 경우 새로 생성 (OAuth 로그인 사용자 포함)
+            console.log('사용자 프로필이 없습니다. 새로 생성합니다:', user.uid);
+            try {
+              const newProfile = await saveUserProfile({
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || undefined,
+                photoURL: user.photoURL || undefined,
+              });
+              setUserProfile({
+                ...newProfile,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+              
+              // OAuth 로그인 사용자의 경우 지갑 설정 페이지로 이동하도록 설정
+              if (user.providerData.length > 0) {
+                console.log('OAuth 사용자 - 지갑 설정 페이지로 이동하도록 설정');
+                setShouldRedirectToWalletSetup(true);
+              }
+            } catch (profileError) {
+              console.error('프로필 생성 오류:', profileError);
+            }
           }
+          
           setWallets(userWallets.map(wallet => ({
             ...wallet,
             createdAt: new Date(wallet.createdAt),
@@ -127,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // 프로필이 없는 경우 새로 생성
           if (user) {
             try {
+              console.log('오류로 인해 사용자 프로필을 새로 생성합니다:', user.uid);
               const newProfile = await saveUserProfile({
                 uid: user.uid,
                 email: user.email || '',

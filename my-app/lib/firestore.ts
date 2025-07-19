@@ -52,11 +52,13 @@ export const saveUserProfile = async (userProfile: Omit<UserProfile, 'createdAt'
       updatedAt: serverTimestamp(),
     };
     
+    console.log('사용자 프로필 저장 시도:', userProfile.uid, cleanUserData);
     await setDoc(userRef, cleanUserData);
-    console.log('사용자 프로필이 저장되었습니다:', userProfile.uid);
+    console.log('사용자 프로필이 성공적으로 저장되었습니다:', userProfile.uid);
     return cleanUserData;
   } catch (error) {
     console.error('사용자 프로필 저장 오류:', error);
+    console.error('저장하려던 데이터:', userProfile);
     throw new Error('사용자 프로필을 저장할 수 없습니다.');
   }
 };
@@ -64,11 +66,13 @@ export const saveUserProfile = async (userProfile: Omit<UserProfile, 'createdAt'
 // 사용자 프로필 조회
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
+    console.log('사용자 프로필 조회 시도:', uid);
     const userRef = doc(firestore, 'users', uid);
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
       const data = userSnap.data();
+      console.log('사용자 프로필을 찾았습니다:', uid, data);
       return {
         ...data,
         createdAt: data.createdAt?.toDate() || new Date(),
@@ -80,6 +84,7 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
     }
   } catch (error) {
     console.error('사용자 프로필 조회 오류:', error);
+    console.error('조회하려던 UID:', uid);
     throw new Error('사용자 프로필을 조회할 수 없습니다.');
   }
 };

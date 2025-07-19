@@ -1,30 +1,59 @@
 'use client';
 
 import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
+import { useState, useEffect } from 'react';
 
 export default function MyChronosPage() {
-  // 임시 데이터 (실제로는 API에서 가져올 데이터)
-  const walletAddress = "0x1234...5678";
-  const chronosList = [
-    {
-      id: 1,
-      title: "2024년 목표",
-      openDate: "2025-01-01 00:00",
-      status: "locked"
-    },
-    {
-      id: 2,
-      title: "미래의 나에게",
-      openDate: "2024-12-31 23:59",
-      status: "locked"
-    },
-    {
-      id: 3,
-      title: "회고록",
-      openDate: "2024-06-15 12:00",
-      status: "unlocked"
+  const { user, wallets } = useAuth();
+  const [chronosList, setChronosList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 타임캡슐 목록 가져오기
+  const fetchChronosList = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/chronos?userId=${user.uid}&status=active`);
+      const result = await response.json();
+      
+      if (response.ok) {
+        setChronosList(result.data);
+      } else {
+        console.error('타임캡슐 목록 조회 실패:', result.error);
+      }
+    } catch (error) {
+      console.error('타임캡슐 목록 조회 오류:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // 컴포넌트 마운트 시 타임캡슐 목록 가져오기
+  useEffect(() => {
+    if (user) {
+      fetchChronosList();
+    }
+  }, [user]);
+
+  // 로그인이 필요한 경우
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">로그인이 필요합니다</h1>
+          <a href="/login" className="text-blue-400 hover:text-blue-300">
+            로그인 페이지로 이동
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // 활성 지갑 주소
+  const activeWallet = wallets.find(wallet => wallet.isActive);
+  const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -51,8 +80,13 @@ export default function MyChronosPage() {
 
         {/* 타임캡슐 리스트 */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400">타임캡슐 목록을 불러오는 중...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
               <thead className="bg-gray-800">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 border-b border-gray-700">
@@ -85,13 +119,13 @@ export default function MyChronosPage() {
                       {index + 1}
                     </td>
                     <td className="px-6 py-4 text-sm text-white font-medium">
-                      {chronos.title}
+                      {chronos.name}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300">
                       <div>
-                        <div>{chronos.openDate}</div>
+                        <div>{chronos.openDate ? new Date(chronos.openDate).toLocaleString('ko-KR') : '날짜 미정'}</div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {(() => {
+                          {chronos.openDate ? (() => {
                             const today = new Date();
                             const openDate = new Date(chronos.openDate);
                             const diffTime = openDate.getTime() - today.getTime();
@@ -104,12 +138,12 @@ export default function MyChronosPage() {
                             } else {
                               return `D+${Math.abs(diffDays)}`;
                             }
-                          })()}
+                          })() : '날짜 미정'}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {chronos.status === 'locked' ? (
+                      {chronos.openDate && new Date(chronos.openDate) > new Date() ? (
                         <span className="text-gray-400 text-sm">잠김</span>
                       ) : (
                         <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm">
@@ -136,7 +170,8 @@ export default function MyChronosPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* 빈 상태 메시지 */}

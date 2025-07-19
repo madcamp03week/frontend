@@ -162,6 +162,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
+
+
         {/* 폴리곤 네트워크 정보 */}
         <div className="mt-8 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
           <div className="p-6">

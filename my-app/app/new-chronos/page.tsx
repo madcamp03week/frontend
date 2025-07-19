@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function NewChronosPage() {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
@@ -21,11 +23,64 @@ export default function NewChronosPage() {
   const [manualAddress, setManualAddress] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 타임캡슐 생성 로직 구현
-    console.log('타임캡슐 생성:', { name, description, content });
+    
+    try {
+      // 타임캡슐 데이터 준비
+      const chronosData = {
+        name,
+        description,
+        content,
+        openDate: (document.getElementById('openDate') as HTMLInputElement)?.value || null,
+        isEncrypted,
+        password: isEncrypted ? password : null,
+        isPublic,
+        tags,
+        enhancedSecurity,
+        n: enhancedSecurity ? n : null,
+        m: enhancedSecurity ? m : null,
+        nonTransferable,
+        userId: user?.uid || 'anonymous'
+      };
+
+      // API 호출
+      const response = await fetch('/api/chronos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chronosData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('타임캡슐이 성공적으로 생성되었습니다!');
+        // 성공 후 대시보드로 이동
+        window.location.href = '/dashboard';
+      } else {
+        alert(`타임캡슐 생성 실패: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('타임캡슐 생성 오류:', error);
+      alert('타임캡슐 생성 중 오류가 발생했습니다.');
+    }
   };
+
+  // 로그인이 필요한 경우
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">로그인이 필요합니다</h1>
+          <a href="/login" className="text-blue-400 hover:text-blue-300">
+            로그인 페이지로 이동
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">

@@ -312,7 +312,7 @@ export default function DashboardPage() {
                     
                     <div className="mb-4">
                       <h3 className="text-xl font-bold text-green-400 mb-2">
-                        {wallet.label || `지갑 ${index + 1}`}
+                        {'활성 지갑'}
                       </h3>
                     </div>
                     
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-medium">{wallet.createdAt.toLocaleDateString('ko-KR')}</p>
                       </div>
                       
-                      <div className="flex space-x-3 pt-2">
+                      <div className="flex justify-end space-x-3 pt-2">
                         <a
                           href={`https://polygonscan.com/address/${wallet.address}`}
                           target="_blank"
@@ -362,6 +362,18 @@ export default function DashboardPage() {
                           </svg>
                           Polygonscan 탐색
                         </a>
+                        <button
+                          onClick={() => {
+                            // Private key 확인 로직을 여기에 추가할 수 있습니다
+                            alert('Private key 확인 기능은 보안상 별도 구현이 필요합니다.');
+                          }}
+                          className="group/private flex items-center px-4 py-2 bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 border border-red-500/30 hover:border-red-400/50 text-red-300 hover:text-red-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-red-500/25 transform hover:scale-105"
+                        >
+                          <svg className="w-4 h-4 mr-2 group-hover/private:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                          Private key 확인
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -201,7 +201,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-[#1a1a1a] rounded-lg border border-gray-600 shadow-2xl p-8">
         <div>
           <h2 className="text-center text-3xl font-extrabold text-white mb-8">
-            {isSignUp ? 'Register' : 'Login'}
+            {isSignUp ? 'Sign Up' : 'Sign In'}
           </h2>
         </div>
         

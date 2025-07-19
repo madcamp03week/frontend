@@ -584,6 +584,18 @@ export default function DashboardPage() {
         isOpen={showWarningModal}
         onClose={() => setShowWarningModal(false)}
         onConfirm={handleConfirmNewWallet}
+        title="주의사항"
+        message="새 지갑을 발급하면 기존의 타임캡슐들을 Chronos에서 조회할 수 없게 됩니다."
+        confirmText="지갑 생성으로 이동"
+        cancelText="취소"
+        details={
+          <p className="text-gray-400 text-xs">
+            • 기존 지갑으로 생성한 타임캡슐은 새 지갑에서 접근할 수 없습니다<br/>
+            • 타임캡슐 데이터는 기존 지갑 주소와 연결되어 있습니다<br/>
+            • 새 지갑 발급 후에는 기존 타임캡슐을 복구할 수 없습니다<br/>
+            • 지갑 설정 페이지에서 암호화 방법을 선택할 수 있습니다
+          </p>
+        }
         loading={loading}
       />
       
@@ -596,6 +608,18 @@ export default function DashboardPage() {
           // 여기에 실제 Private key 확인 로직을 추가할 수 있습니다
           alert('Private key 확인 기능은 보안상 별도 구현이 필요합니다.');
         }}
+        title="Private Key 확인 경고"
+        message="Private key가 노출되면 지갑의 모든 타임캡슐을 잃을 수 있습니다."
+        confirmText="확인"
+        cancelText="취소"
+        details={
+          <p className="text-red-300 text-xs">
+            • Private key는 지갑의 모든 권한을 가집니다<br/>
+            • 노출된 Private key로 누구나 지갑에 접근할 수 있습니다<br/>
+            • 타임캡슐 데이터가 완전히 손실될 수 있습니다<br/>
+            • 이 작업은 되돌릴 수 없습니다
+          </p>
+        }
         loading={false}
       />
     </div>

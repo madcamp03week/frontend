@@ -3,6 +3,7 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import WarningModal from '../../components/WarningModal';
+import PrivateKeyWarningModal from '../../components/PrivateKeyWarningModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -10,6 +11,7 @@ export default function DashboardPage() {
   const { user, userProfile, wallets, logout, hasWallet, loading: authLoading, dataLoaded, updateDisplayName } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showPrivateKeyWarningModal, setShowPrivateKeyWarningModal] = useState(false);
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nicknameLoading, setNicknameLoading] = useState(false);
@@ -363,10 +365,7 @@ export default function DashboardPage() {
                           Polygonscan 탐색
                         </a>
                         <button
-                          onClick={() => {
-                            // Private key 확인 로직을 여기에 추가할 수 있습니다
-                            alert('Private key 확인 기능은 보안상 별도 구현이 필요합니다.');
-                          }}
+                          onClick={() => setShowPrivateKeyWarningModal(true)}
                           className="group/private flex items-center px-4 py-2 bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 border border-red-500/30 hover:border-red-400/50 text-red-300 hover:text-red-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-red-500/25 transform hover:scale-105"
                         >
                           <svg className="w-4 h-4 mr-2 group-hover/private:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -586,6 +585,18 @@ export default function DashboardPage() {
         onClose={() => setShowWarningModal(false)}
         onConfirm={handleConfirmNewWallet}
         loading={loading}
+      />
+      
+      {/* Private Key 경고 모달 */}
+      <PrivateKeyWarningModal
+        isOpen={showPrivateKeyWarningModal}
+        onClose={() => setShowPrivateKeyWarningModal(false)}
+        onConfirm={() => {
+          setShowPrivateKeyWarningModal(false);
+          // 여기에 실제 Private key 확인 로직을 추가할 수 있습니다
+          alert('Private key 확인 기능은 보안상 별도 구현이 필요합니다.');
+        }}
+        loading={false}
       />
     </div>
   );

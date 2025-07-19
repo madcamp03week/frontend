@@ -12,23 +12,36 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
+  // 활성 지갑 주소
+  const activeWallet = wallets.find(wallet => wallet.isActive);
+
 
   // 타임캡슐 목록 가져오기
   const fetchChronosList = async () => {
-    if (!user) return;
+    if (!user || !activeWallet) return;
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/chronos?userId=${user.uid}&status=active`);
+      // Firebase ID 토큰 가져오기
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch(`/api/my-chronos?walletAddress=${activeWallet.address}`, {
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
       const result = await response.json();
       
       if (response.ok) {
-        setChronosList(result.data);
+        console.log('✅ 타임캡슐 목록 조회 성공:', result.data?.length || 0);
+        setChronosList(result.data || []);
       } else {
-        console.error('타임캡슐 목록 조회 실패:', result.error);
+        console.error('❌ 타임캡슐 목록 조회 실패:', result.error);
       }
     } catch (error) {
-      console.error('타임캡슐 목록 조회 오류:', error);
+      console.error('❌ 타임캡슐 목록 조회 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -36,10 +49,11 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
 
   // 컴포넌트 마운트 시 타임캡슐 목록 가져오기
   useEffect(() => {
-    if (user) {
+    if (user && activeWallet) {
+      console.log('🔄 타임캡슐 목록 가져오기 시작:', activeWallet.address);
       fetchChronosList();
     }
-  }, [user]);
+  }, [user, activeWallet]);
 
   // 로그인이 필요한 경우
   if (!user) {
@@ -56,7 +70,6 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
   }
 
   // 활성 지갑 주소
-  const activeWallet = wallets.find(wallet => wallet.isActive);
   const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
 
 
@@ -144,7 +157,24 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
                       {index + 1}
                     </td>
                     <td className="px-6 py-4 text-sm text-white font-medium">
-                      {chronos.name}
+                      <div className="flex items-center space-x-3">
+                        {chronos.imageUrl && (
+                          <img 
+                            src={chronos.imageUrl} 
+                            alt={chronos.name}
+                            className="w-8 h-8 rounded-lg object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <div>
+                          <div>{chronos.name}</div>
+                          {chronos.tokenId && (
+                            <div className="text-xs text-gray-400">Token ID: {chronos.tokenId}</div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300">
                       <div>
@@ -187,9 +217,14 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
                       </button>
                     </td>
                     <td className="px-6 py-4">
-                      <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm">
-                        확인
-                      </button>
+                      <a 
+                        href={chronos.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm inline-block"
+                      >
+                        OpenSea
+                      </a>
                     </td>
                   </tr>
                 ))}

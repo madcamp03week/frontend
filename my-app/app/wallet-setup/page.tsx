@@ -21,17 +21,16 @@ export default function WalletSetupPage() {
     
     try {
       if (selectedOption === 'chronos') {
-        // Chronos가 암호화하여 관리하는 방법
+        // Chronos가 암호화하여 관리하는 방법 - 지갑 생성
         await createNewWallet();
         console.log('Chronos 암호화 방식으로 지갑이 생성되었습니다.');
+        // 성공 시 홈페이지로 이동
+        router.push('/');
       } else {
-        // 본인의 비밀번호로 암호화하는 방법
+        // 본인의 비밀번호로 암호화하는 방법 - 비밀번호 입력 페이지로 이동
         console.log('본인 비밀번호 암호화 방식 선택됨');
-        // TODO: 비밀번호 입력 페이지로 이동하거나 모달 표시
+        router.push('/wallet-setup/password');
       }
-      
-      // 성공 시 홈페이지로 이동
-      router.push('/');
     } catch (error) {
       console.error('지갑 설정 중 오류:', error);
       // 에러 처리 로직 추가 가능

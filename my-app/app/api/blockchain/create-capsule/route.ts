@@ -1,11 +1,144 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { CONTRACT_ABI } from '../../../../lib/contract-abi';
+import AWS from 'aws-sdk';
 
 // 환경 변수에서 설정 가져오기 (서버 사이드)
 const INFURA_URL = process.env.INFURA_URL;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
+// AWS SDK 설정 (Filebase)
+const s3 = new AWS.S3({
+  endpoint: 'https://s3.filebase.com',
+  accessKeyId: process.env.FILEBASE_ACCESS_KEY_ID,
+  secretAccessKey: process.env.FILEBASE_SECRET_ACCESS_KEY,
+  s3ForcePathStyle: true,
+  signatureVersion: 'v4',
+  httpOptions: {
+    timeout: 30000
+  }
+});
+
+const bucketName = process.env.FILEBASE_BUCKET_NAME || 'madcamp03';
+
+// IPFS 메타데이터 업로드 함수
+async function uploadIPFSMetadata(chronosData: {
+  name: string;
+  description: string;
+  openDate: Date | null;
+  isPublic: boolean;
+}): Promise<{
+  unopenedIpfsMetadataCid: string | null;
+  openedIpfsMetadataCid: string | null;
+  unopenedUrl: string;
+  openedUrl: string;
+}> {
+  try {
+    // 열리지 않은 메타데이터
+    const unopenedMetadata = {
+      name: `${chronosData.name} (Unopened)`,
+      description: chronosData.description,
+      image: "ipfs://QmXWi3vQ8JXN195tgGgs7FNgXwEFxd9XSutExj9Mm3AJnm",
+      attributes: [
+        { 
+          trait_type: "Open Date", 
+          value: chronosData.openDate ? chronosData.openDate.toISOString() : "Never" 
+        },
+        { 
+          trait_type: "Status", 
+          value: "Unopened" 
+        },
+        { 
+          trait_type: "Public", 
+          value: chronosData.isPublic ? "Yes" : "No" 
+        }
+      ],
+      properties: {
+        contentTypes: []
+      }
+    };
+
+    // 열린 메타데이터
+    const openedMetadata = {
+      name: `${chronosData.name} (Opened)`,
+      description: chronosData.description,
+      image: "ipfs://QmXWi3vQ8JXN195tgGgs7FNgXwEFxd9XSutExj9Mm3AJnm",
+      attributes: [
+        { 
+          trait_type: "Open Date", 
+          value: chronosData.openDate ? chronosData.openDate.toISOString() : "Never" 
+        },
+        { 
+          trait_type: "Status", 
+          value: "Opened" 
+        },
+        { 
+          trait_type: "Public", 
+          value: chronosData.isPublic ? "Yes" : "No" 
+        }
+      ],
+      properties: {
+        contentTypes: []
+      }
+    };
+
+    // 파일명 생성 (타임스탬프 기반)
+    const timestamp = Date.now();
+    const unopenedFileName = `unopened_${timestamp}.json`;
+    const openedFileName = `opened_${timestamp}.json`;
+
+    // IPFS에 업로드
+    const uploadPromises = [
+      // 열리지 않은 메타데이터 업로드
+      s3.upload({
+        Bucket: bucketName,
+        Key: unopenedFileName,
+        Body: JSON.stringify(unopenedMetadata, null, 2),
+        ContentType: 'application/json'
+      }).promise(),
+      
+      // 열린 메타데이터 업로드
+      s3.upload({
+        Bucket: bucketName,
+        Key: openedFileName,
+        Body: JSON.stringify(openedMetadata, null, 2),
+        ContentType: 'application/json'
+      }).promise()
+    ];
+
+    const [unopenedResult, openedResult] = await Promise.all(uploadPromises);
+
+    // 메타데이터에서 CID 추출
+    const unopenedHead = await s3.headObject({
+      Bucket: bucketName,
+      Key: unopenedFileName
+    }).promise();
+
+    const openedHead = await s3.headObject({
+      Bucket: bucketName,
+      Key: openedFileName
+    }).promise();
+
+    const unopenedCid = unopenedHead.Metadata?.cid || null;
+    const openedCid = openedHead.Metadata?.cid || null;
+
+    console.log('IPFS 메타데이터 업로드 완료:');
+    console.log('Unopened CID:', unopenedCid);
+    console.log('Opened CID:', openedCid);
+
+    return {
+      unopenedIpfsMetadataCid: unopenedCid,
+      openedIpfsMetadataCid: openedCid,
+      unopenedUrl: unopenedResult.Location,
+      openedUrl: openedResult.Location
+    };
+
+  } catch (error) {
+    console.error('IPFS 메타데이터 업로드 실패:', error);
+    throw new Error('IPFS 메타데이터 업로드에 실패했습니다.');
+  }
+}
 
 // 타임캡슐 생성 API
 export async function POST(request: NextRequest) {
@@ -27,6 +160,24 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // IPFS 메타데이터 업로드
+    let ipfsResult = null;
+    try {
+      ipfsResult = await uploadIPFSMetadata({
+        name,
+        description,
+        openDate: openDate ? new Date(openDate) : null,
+        isPublic
+      });
+      console.log('IPFS 메타데이터 업로드 성공:', ipfsResult);
+    } catch (ipfsError) {
+      console.error('IPFS 메타데이터 업로드 실패:', ipfsError);
+      return NextResponse.json({
+        success: false,
+        error: 'IPFS 메타데이터 업로드에 실패했습니다.'
+      }, { status: 500 });
+    }
+
     // Provider 초기화
     const provider = new ethers.JsonRpcProvider(INFURA_URL);
     
@@ -45,12 +196,14 @@ export async function POST(request: NextRequest) {
       ? Math.floor(new Date(openDate).getTime() / 1000)
       : 0;
 
-    // 스마트컨트랙트 함수 호출
-    const tx = await contract.createTimeCapsule(
+    // 스마트컨트랙트 함수 호출 (IPFS CID 포함)
+    const tx = await contract.createCapsule(
+      [serviceWallet.address], // recipients (현재는 서비스 지갑만)
       name,
       description,
       openDateTimestamp,
-      isPublic
+      ipfsResult.unopenedIpfsMetadataCid || '',
+      ipfsResult.openedIpfsMetadataCid || ''
     );
 
     // 트랜잭션 완료 대기
@@ -61,7 +214,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       transactionHash: receipt.hash,
-      blockNumber: Number(receipt.blockNumber)
+      blockNumber: Number(receipt.blockNumber),
+      ipfs: ipfsResult
     });
 
   } catch (error) {

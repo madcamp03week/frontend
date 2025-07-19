@@ -3,6 +3,7 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import WarningModal from '../../components/WarningModal';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user, userProfile, wallets, logout, createNewWallet } = useAuth();
@@ -41,11 +42,24 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white text-center">
-          <h1 className="text-2xl font-bold mb-4">로그인이 필요합니다</h1>
-          <a href="/login" className="text-blue-400 hover:text-blue-300">
-            로그인 페이지로 이동
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-indigo-900">
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-12 text-center shadow-2xl">
+          <div className="w-20 h-20 mx-auto mb-8 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            인증이 필요합니다
+          </h1>
+          <a 
+            href="/login" 
+            className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            로그인하기
           </a>
         </div>
       </div>
@@ -53,75 +67,190 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white relative overflow-hidden">
+      {/* 배경 그라데이션 오브 */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-full filter blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+      
       {/* 네비게이션 */}
-      <nav className="w-full flex justify-between items-center px-10 py-6 border-b border-gray-800">
+      <nav className="w-full flex justify-between items-center px-10 py-6">
         <div className="text-2xl font-bold">
-          <a href="/">Chronos</a>
+         Chronos
         </div>
-        <div className="text-sm text-gray-300">
-          Dashboard
+        <div className="space-x-8 text-sm text-gray-300 font-light">
+          <Link href="/company">Company</Link>
+          <Link href="/product">Product</Link>
+          <Link href="/new-chronos">New Chronos</Link>
+          <Link href="/my-chronos">My Chronos</Link>
+          {!loading && (
+            user ? (
+              <>
+                <Link href="/dashboard">Dashboard</Link>
+                <button
+                  onClick={logout}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/login">Login</Link>
+            )
+          )}
         </div>
       </nav>
 
       {/* 메인 컨텐츠 */}
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">대시보드</h1>
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent animate-pulse">
+            대시보드
+          </h1>
+          <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"></div>
         </div>
 
-        {/* 사용자 정보 */}
-        <div className="mb-8">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-            <p className="text-gray-300">
-              <span className="font-medium">이메일:</span> {user.email}
-            </p>
-            <p className="text-gray-300 mt-2">
-              <span className="font-medium">사용자 ID:</span> {user.uid}
-            </p>
-            <p className="text-gray-300 mt-2">
-              <span className="font-medium">가입일:</span> {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('ko-KR') : '알 수 없음'}
-            </p>
-            {userProfile && (
-              <p className="text-gray-300 mt-2">
-                <span className="font-medium">프로필 생성일:</span> {userProfile.createdAt.toLocaleDateString('ko-KR')}
-              </p>
-            )}
+        {/* 사용자 정보 카드 */}
+        <div className="mb-8 group">
+          <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl p-8 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-500 hover:border-cyan-500/50 transform hover:scale-[1.02]">
+            <div className="flex items-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center mr-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
+                  사용자 정보
+                </h3>
+                <p className="text-gray-400">개인 계정 상세 정보</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+                  <span className="text-gray-300 text-sm">이메일</span>
+                </div>
+                <p className="text-lg font-medium pl-5">{user.email || '이메일 정보 없음'}</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  <span className="text-gray-300 text-sm">사용자 ID</span>
+                </div>
+                <p className="text-sm font-mono pl-5 text-gray-300 break-all">{user.uid}</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-gray-300 text-sm">가입일</span>
+                </div>
+                <p className="text-lg font-medium pl-5">
+                  {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('ko-KR') : '알 수 없음'}
+                </p>
+              </div>
+              
+              {userProfile && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
+                    <span className="text-gray-300 text-sm">프로필 생성일</span>
+                  </div>
+                  <p className="text-lg font-medium pl-5">
+                    {userProfile.createdAt.toLocaleDateString('ko-KR')}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* 폴리곤 지갑 정보 */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">폴리곤 지갑</h2>
+        <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-8">
+          <div className="p-8">
+            <div className="flex items-center mb-8">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                  폴리곤 지갑
+                </h2>
+                <p className="text-gray-400">블록체인 자산 관리</p>
+              </div>
+            </div>
+            
             {wallets.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* 활성 지갑만 표시 */}
                 {wallets.filter(wallet => wallet.isActive).map((wallet, index) => (
-                  <div key={wallet.id} className="border border-gray-700 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-medium text-blue-400">{wallet.label || `지갑 ${index + 1}`}</h3>
-                      <span className="text-xs text-green-500 font-semibold">활성</span>
+                  <div 
+                    key={wallet.id} 
+                    className="group relative backdrop-blur-sm bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-6 hover:border-green-400/50 transition-all duration-500 hover:shadow-green-500/25 hover:shadow-lg transform hover:scale-[1.02]"
+                  >
+                    <div className="absolute top-4 right-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                        활성
+                      </span>
                     </div>
-                    <div className="space-y-2">
+                    
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-green-400 mb-2">
+                        {wallet.label || `지갑 ${index + 1}`}
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-gray-400 text-sm">지갑 주소:</p>
-                        <p className="font-mono text-sm break-all bg-gray-700 p-2 rounded">
-                          {wallet.address}
+                        <p className="text-gray-400 text-sm mb-2 flex items-center">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          지갑 주소
                         </p>
+                        <div className="group/address relative">
+                          <p className="font-mono text-sm break-all bg-black/30 p-4 rounded-xl border border-white/10 hover:border-cyan-500/50 transition-all duration-300">
+                            {wallet.address}
+                          </p>
+                          <button 
+                            onClick={() => navigator.clipboard.writeText(wallet.address)}
+                            className="absolute top-2 right-2 p-2 opacity-0 group-hover/address:opacity-100 transition-opacity duration-300 hover:bg-white/10 rounded-lg"
+                            title="주소 복사"
+                          >
+                            <svg className="w-4 h-4 text-gray-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
+                      
                       <div>
-                        <p className="text-gray-400 text-sm">생성일:</p>
-                        <p className="text-sm">{wallet.createdAt.toLocaleDateString('ko-KR')}</p>
+                        <p className="text-gray-400 text-sm mb-2 flex items-center">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          생성일
+                        </p>
+                        <p className="text-sm font-medium">{wallet.createdAt.toLocaleDateString('ko-KR')}</p>
                       </div>
-                      <div className="flex space-x-2">
+                      
+                      <div className="flex space-x-3 pt-2">
                         <a
                           href={`https://polygonscan.com/address/${wallet.address}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm rounded-md transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                          className="group/link flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-300 hover:text-indigo-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-indigo-500/25 transform hover:scale-105"
                         >
-                          Polygonscan 보기
+                          <svg className="w-4 h-4 mr-2 group-hover/link:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          Polygonscan 탐색
                         </a>
                       </div>
                     </div>
@@ -130,11 +259,18 @@ export default function DashboardPage() {
                 
                 {/* 비활성 지갑이 있는 경우 표시 */}
                 {wallets.filter(wallet => !wallet.isActive).length > 0 && (
-                  <div className="mt-4 p-3 bg-gray-700 rounded-lg border border-gray-600">
-                    <p className="text-gray-400 text-sm">
-                      <span className="text-yellow-400 font-semibold">비활성 지갑 {wallets.filter(wallet => !wallet.isActive).length}개</span>가 있습니다.
-                      <br />
-                      새 지갑을 발급하면 기존 타임캡슐에 접근할 수 없게 됩니다.
+                  <div className="backdrop-blur-sm bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6">
+                    <div className="flex items-center mb-3">
+                      <svg className="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.314 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <span className="text-yellow-400 font-semibold text-lg">
+                        비활성 지갑 {wallets.filter(wallet => !wallet.isActive).length}개 감지됨
+                      </span>
+                    </div>
+                    <p className="text-gray-300 leading-relaxed">
+                      새로운 지갑을 발급하면 기존 타임캡슐에 대한 접근 권한이 완전히 소실됩니다. 
+                      이 작업은 되돌릴 수 없으니 신중히 고려해주세요.
                     </p>
                   </div>
                 )}
@@ -142,20 +278,58 @@ export default function DashboardPage() {
                 <button
                   onClick={handleCreateNewWallet}
                   disabled={loading}
-                  className="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium rounded-md disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="group w-full px-6 py-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/30 hover:border-emerald-400/50 text-emerald-300 hover:text-emerald-200 font-semibold rounded-2xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 transform hover:scale-[1.02] relative overflow-hidden"
                 >
-                  {loading ? '생성 중...' : '새 지갑 발급'}
+                  <div className="flex items-center justify-center">
+                    {loading ? (
+                      <>
+                        <svg className="w-5 h-5 mr-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        지갑 생성 중...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mr-3 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        새로운 지갑 발급
+                      </>
+                    )}
+                  </div>
                 </button>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-400 mb-4">지갑 정보를 찾을 수 없습니다</p>
+              <div className="text-center py-12">
+                <div className="w-20 h-20 mx-auto mb-8 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-full flex items-center justify-center border border-gray-500/30">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-gray-300">지갑이 없습니다</h3>
+                <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                  폴리곤 네트워크에서 타임캡슐을 사용하려면 먼저 지갑을 생성해야 합니다.
+                </p>
                 <button
                   onClick={handleCreateNewWallet}
                   disabled={loading}
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium rounded-md disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-semibold rounded-2xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 transform hover:scale-105"
                 >
-                  {loading ? '생성 중...' : '폴리곤 지갑 발급'}
+                  {loading ? (
+                    <>
+                      <svg className="w-5 h-5 mr-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      지갑 생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-3 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      폴리곤 지갑 생성하기
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -163,29 +337,59 @@ export default function DashboardPage() {
         </div>
 
         {/* 폴리곤 네트워크 정보 */}
-        <div className="mt-8 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">폴리곤 네트워크 정보</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-gray-400 text-sm">네트워크</p>
-                <p className="font-semibold">Polygon Mainnet</p>
+        <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="p-8">
+            <div className="flex items-center mb-8">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center mr-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
               <div>
-                <p className="text-gray-400 text-sm">체인 ID</p>
-                <p className="font-mono">137</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">네이티브 토큰</p>
-                <p className="font-semibold">MATIC</p>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
+                  네트워크 정보
+                </h2>
+                <p className="text-gray-400">폴리곤 메인넷 상태</p>
               </div>
             </div>
-            {wallets.filter(wallet => !wallet.isActive).length > 0 && (
-              <div className="mt-4">
-                <p className="text-gray-400 text-sm">비활성 지갑 수</p>
-                <p className="text-lg font-bold text-yellow-400">{wallets.filter(wallet => !wallet.isActive).length}개</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="group backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-violet-500/10 border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all duration-300 hover:shadow-purple-500/25 transform hover:scale-105">
+                <div className="flex items-center mb-4">
+                  <div className="w-3 h-3 bg-purple-400 rounded-full mr-3 animate-pulse"></div>
+                  <p className="text-gray-300 text-sm font-medium">네트워크</p>
+                </div>
+                <p className="text-xl font-bold text-purple-300">Polygon Mainnet</p>
               </div>
-            )}
+              
+              <div className="group backdrop-blur-sm bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-6 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-cyan-500/25 transform hover:scale-105">
+                <div className="flex items-center mb-4">
+                  <div className="w-3 h-3 bg-cyan-400 rounded-full mr-3 animate-pulse"></div>
+                  <p className="text-gray-300 text-sm font-medium">체인 ID</p>
+                </div>
+                <p className="text-xl font-bold font-mono text-cyan-300">137</p>
+              </div>
+              
+              <div className="group backdrop-blur-sm bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-6 hover:border-green-400/50 transition-all duration-300 hover:shadow-green-500/25 transform hover:scale-105">
+                <div className="flex items-center mb-4">
+                  <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                  <p className="text-gray-300 text-sm font-medium">네이티브 토큰</p>
+                </div>
+                <p className="text-xl font-bold text-green-300">MATIC</p>
+              </div>
+              
+              {wallets.filter(wallet => !wallet.isActive).length > 0 && (
+                <div className="group backdrop-blur-sm bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-400/50 transition-all duration-300 hover:shadow-yellow-500/25 transform hover:scale-105">
+                  <div className="flex items-center mb-4">
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full mr-3 animate-pulse"></div>
+                    <p className="text-gray-300 text-sm font-medium">비활성 지갑</p>
+                  </div>
+                  <p className="text-2xl font-bold text-yellow-400">
+                    {wallets.filter(wallet => !wallet.isActive).length}개
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -199,4 +403,4 @@ export default function DashboardPage() {
       />
     </div>
   );
-} 
+}

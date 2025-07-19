@@ -31,7 +31,7 @@ export default function WarningModal({
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[9999]">
-      <div className="backdrop-blur-xl bg-gray-800/80 rounded-2xl p-6 max-w-md w-full mx-4 border border-gray-700/50">
+      <div className="backdrop-blur-xl bg-gray-800/80 rounded-2xl p-6 max-w-md w-full mx-4 border border-yellow-700/50">
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
             {icon || (

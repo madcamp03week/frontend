@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // 암호화 키 (실제 프로덕션에서는 환경변수로 관리해야 함)
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
+const ENCRYPTION_KEY = process.env.SERVER_SIDE_ENCRYPTION_KEY;
 
 // Private Key 암호화 (시스템 키만 사용)
 export const encryptPrivateKey = (privateKey: string): string => {

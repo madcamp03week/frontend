@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import WarningModal from '../../components/WarningModal';
 import PrivateKeyWarningModal from '../../components/PrivateKeyWarningModal';
+import PrivateKeyDisplayModal from '../../components/PrivateKeyDisplayModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -12,6 +13,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showPrivateKeyWarningModal, setShowPrivateKeyWarningModal] = useState(false);
+  const [showPrivateKeyDisplayModal, setShowPrivateKeyDisplayModal] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<any>(null);
+  const [privateKeyData, setPrivateKeyData] = useState<any>(null);
+  const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nicknameLoading, setNicknameLoading] = useState(false);
@@ -75,6 +80,49 @@ export default function DashboardPage() {
   const handleNicknameCancel = () => {
     setNickname(userProfile?.displayName || '');
     setIsEditingNickname(false);
+  };
+
+  // Private Key 확인 처리
+  const handlePrivateKeyConfirm = async () => {
+    if (!selectedWallet || !user) return;
+    
+    setPrivateKeyLoading(true);
+    setShowPrivateKeyWarningModal(false);
+    
+    try {
+      // Firebase ID 토큰 가져오기
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch('/api/wallet/private-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          walletAddress: selectedWallet.address,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPrivateKeyData(data.data);
+        setShowPrivateKeyDisplayModal(true);
+      } else {
+        alert(data.error || 'Private Key 조회에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Private Key 조회 오류:', error);
+      alert('Private Key 조회 중 오류가 발생했습니다.');
+    } finally {
+      setPrivateKeyLoading(false);
+    }
+  };
+
+  const handlePrivateKeyRequest = (wallet: any) => {
+    setSelectedWallet(wallet);
+    setShowPrivateKeyWarningModal(true);
   };
 
   if (!user) {
@@ -365,7 +413,7 @@ export default function DashboardPage() {
                           Polygonscan 탐색
                         </a>
                         <button
-                          onClick={() => setShowPrivateKeyWarningModal(true)}
+                          onClick={() => handlePrivateKeyRequest(wallet)}
                           className="group/private flex items-center px-4 py-2 bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 border border-red-500/30 hover:border-red-400/50 text-red-300 hover:text-red-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-red-500/25 transform hover:scale-105"
                         >
                           <svg className="w-4 h-4 mr-2 group-hover/private:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,7 +501,7 @@ export default function DashboardPage() {
                     
                     <p className="text-gray-300 leading-relaxed mt-4">
                       새로운 지갑을 발급하면 기존 타임캡슐에 대한 접근 권한이 완전히 소실됩니다. 
-                      이 작업은 되돌릴 수 없으니 신중히 고려해주세요.
+                      이 작업은 되돌릴 수 없습니다.
                     </p>
                   </div>
                 )}
@@ -603,11 +651,7 @@ export default function DashboardPage() {
       <PrivateKeyWarningModal
         isOpen={showPrivateKeyWarningModal}
         onClose={() => setShowPrivateKeyWarningModal(false)}
-        onConfirm={() => {
-          setShowPrivateKeyWarningModal(false);
-          // 여기에 실제 Private key 확인 로직을 추가할 수 있습니다
-          alert('Private key 확인 기능은 보안상 별도 구현이 필요합니다.');
-        }}
+        onConfirm={handlePrivateKeyConfirm}
         title="Private Key 확인 경고"
         message="Private key가 노출되면 지갑의 모든 타임캡슐을 잃을 수 있습니다."
         confirmText="확인"
@@ -620,8 +664,23 @@ export default function DashboardPage() {
             • 이 작업은 되돌릴 수 없습니다
           </p>
         }
-        loading={false}
+        loading={privateKeyLoading}
       />
+
+      {/* Private Key 표시 모달 */}
+      {privateKeyData && (
+        <PrivateKeyDisplayModal
+          isOpen={showPrivateKeyDisplayModal}
+          onClose={() => {
+            setShowPrivateKeyDisplayModal(false);
+            setPrivateKeyData(null);
+            setSelectedWallet(null);
+          }}
+          userMade={privateKeyData.userMade}
+          encryptedPrivateKey={privateKeyData.privateKey}
+          walletAddress={selectedWallet?.address || ''}
+        />
+      )}
     </div>
   );
 }

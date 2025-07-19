@@ -8,13 +8,11 @@ import SubscribeFooter from '../components/SubscribeFooter';
 
 export default function CompanyPage() {
   return (
-
     <main className="min-h-screen bg-black text-white font-sans">
-
       {/* 네비게이션 */}
-        <nav className="w-full flex justify-between items-center px-10 py-6">
+      <nav className="w-full flex justify-between items-center px-10 py-6">
         <div className="text-2xl font-bold">
-        <Link href="/">Chronos</Link>
+          <Link href="/">Chronos</Link>
         </div>
         <div className="space-x-8 text-sm text-gray-300 font-light">
           <Link href="/company">Company</Link>
@@ -23,6 +21,7 @@ export default function CompanyPage() {
           <Link href="/wallet">Wallet</Link>
         </div>
       </nav>
+
       {/* Hero Section */}
       <section className="text-center py-20 px-6 md:px-12">
         <motion.h1
@@ -70,12 +69,10 @@ export default function CompanyPage() {
         >
           <h2 className="text-3xl font-bold">Our Team</h2>
         </motion.div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
           {[
-            { name: 'Alice Kim', role: 'CEO', img: '/team/alice.jpg' },
-            { name: 'Bob Lee', role: 'CTO', img: '/team/bob.jpg' },
-            { name: 'Carol Park', role: 'Lead Designer', img: '/team/carol.jpg' },
-            { name: 'David Choi', role: 'Blockchain Engineer', img: '/team/david.jpg' },
+            { name: '박재현', role: 'Founder & Engineer (KAIST)', img: '/team/park.jpg' },
+            { name: '황광호', role: 'Co-Founder (Jeonbuk National Univ.)', img: '/team/hwang.jpg' },
           ].map((member, i) => (
             <motion.div
               key={member.name}

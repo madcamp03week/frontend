@@ -7,9 +7,11 @@ import { useState, useEffect } from 'react';
 
 
 export default function MyChronosPage() {
-  const { user, wallets } = useAuth();
+const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
   const [chronosList, setChronosList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
 
   // 타임캡슐 목록 가져오기
   const fetchChronosList = async () => {
@@ -57,10 +59,6 @@ export default function MyChronosPage() {
   const activeWallet = wallets.find(wallet => wallet.isActive);
   const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
 
-  const { userProfile, logout, createNewWallet } = useAuth();
-  const [showWarningModal, setShowWarningModal] = useState(false);
-
-  
 
   return (
     <div className="min-h-screen bg-black text-white">

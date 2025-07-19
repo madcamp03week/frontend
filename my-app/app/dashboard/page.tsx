@@ -154,9 +154,8 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
-                  사용자 정보
+                  내 정보
                 </h3>
-                <p className="text-gray-400">개인 계정 상세 정보</p>
               </div>
             </div>
             
@@ -290,9 +289,8 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                  폴리곤 지갑
+                  내 지갑
                 </h2>
-                <p className="text-gray-400">블록체인 자산 관리</p>
               </div>
             </div>
             

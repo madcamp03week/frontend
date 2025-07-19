@@ -1,6 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
+import { useState } from 'react';
+
 
 export default function MyChronosPage() {
   // 임시 데이터 (실제로는 API에서 가져올 데이터)
@@ -26,15 +30,39 @@ export default function MyChronosPage() {
     }
   ];
 
+  const { user, userProfile, wallets, logout, createNewWallet } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
+  
+
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* 네비게이션 */}
-      <nav className="w-full flex justify-between items-center px-10 py-6 border-b border-gray-800">
+     {/* 네비게이션 */}
+      <nav className="w-full flex justify-between items-center px-10 py-6">
         <div className="text-2xl font-bold">
-          <Link href="/">Chronos</Link>
+         Chronos
         </div>
-        <div className="text-sm text-gray-300">
-          My Chronos
+        <div className="space-x-8 text-sm text-gray-300 font-light">
+          <Link href="/company">Company</Link>
+          <Link href="/product">Product</Link>
+          <Link href="/new-chronos">New Chronos</Link>
+          <Link href="/my-chronos">My Chronos</Link>
+          {!loading && (
+            user ? (
+              <>
+                <Link href="/dashboard">Dashboard</Link>
+                <button
+                  onClick={logout}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/login">Login</Link>
+            )
+          )}
         </div>
       </nav>
 
@@ -163,4 +191,4 @@ export default function MyChronosPage() {
       </div>
     </div>
   );
-} 
+}

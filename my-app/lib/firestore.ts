@@ -34,6 +34,7 @@ export interface WalletData {
   updatedAt: Date;
   isActive: boolean;
   label?: string;
+  userMade?: boolean; // 사용자가 직접 생성한 지갑인지 여부
 }
 
 // 사용자 프로필 저장
@@ -114,6 +115,7 @@ export const saveWalletData = async (walletData: Omit<WalletData, 'id' | 'create
       isActive: walletData.isActive,
       ...(walletData.label && { label: walletData.label }),
       ...(walletData.encryptedPrivateKey && { encryptedPrivateKey: walletData.encryptedPrivateKey }),
+      ...(walletData.userMade !== undefined && { userMade: walletData.userMade }),
       id: walletRef.id,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

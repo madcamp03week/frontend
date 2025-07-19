@@ -32,7 +32,8 @@ export default function WarningModal({ isOpen, onClose, onConfirm, loading = fal
             <p className="text-gray-400 text-xs">
               • 기존 지갑으로 생성한 타임캡슐은 새 지갑에서 접근할 수 없습니다<br/>
               • 타임캡슐 데이터는 기존 지갑 주소와 연결되어 있습니다<br/>
-              • 새 지갑 발급 후에는 기존 타임캡슐을 복구할 수 없습니다
+              • 새 지갑 발급 후에는 기존 타임캡슐을 복구할 수 없습니다<br/>
+              • 지갑 설정 페이지에서 암호화 방법을 선택할 수 있습니다
             </p>
           </div>
         </div>
@@ -48,9 +49,9 @@ export default function WarningModal({ isOpen, onClose, onConfirm, loading = fal
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50"
           >
-            {loading ? '처리 중...' : '새 지갑 발급'}
+            {loading ? '처리 중...' : '지갑 생성으로 이동'}
           </button>
         </div>
       </div>

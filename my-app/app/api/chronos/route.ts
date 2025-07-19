@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { firestore } from '../../../lib/firebase';
+import { createTimeCapsuleOnBlockchain } from '../../../lib/blockchain-service';
+import { getUserWallets } from '../../../lib/firestore';
 
 
 // 타임캡슐 생성 API
@@ -9,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // 필수 필드 검증
-    const { name, content, openDate, description, isEncrypted, password, isPublic, tags, enhancedSecurity, n, m, nonTransferable } = body;
+    const { name, content, openDate, description, isEncrypted, password, isPublic, tags, enhancedSecurity, n, m, nonTransferable, walletAddresses } = body;
     
     if (!name) {
       return NextResponse.json(
@@ -36,7 +38,6 @@ export async function POST(request: NextRequest) {
       nonTransferable: nonTransferable || false,
       userId,
       createdAt: new Date(),
-      updatedAt: new Date(),
       status: 'active' // active, opened, deleted
     };
 
@@ -44,27 +45,33 @@ export async function POST(request: NextRequest) {
     const chronosRef = collection(firestore, 'chronos');
     const docRef = await addDoc(chronosRef, chronosData);
 
-    // 블록체인에 타임캡슐 생성 (새로운 API 사용)
+    // 사용자의 지갑 주소들 처리
+    let userWalletAddresses: string[] = [];
+    
+    // 클라이언트에서 전달받은 지갑 주소가 있으면 사용
+    if (walletAddresses && Array.isArray(walletAddresses) && walletAddresses.length > 0) {
+      userWalletAddresses = walletAddresses;
+      console.log('클라이언트에서 전달받은 지갑 주소들:', userWalletAddresses);
+    } else {
+      // 지갑 주소가 없으면 기본 주소 사용 (임시)
+      userWalletAddresses = ['0x38d41fd88833e17970128e91684cC9A0ec47D905'];
+      console.log('기본 지갑 주소 사용:', userWalletAddresses);
+    }
+
+    // 블록체인에 타임캡슐 생성 (함수 직접 호출)
     let blockchainResult = null;
     try {
-      const blockchainResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/blockchain/create-capsule`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: chronosData.name,
-          description: chronosData.description,
-          openDate: chronosData.openDate,
-          isPublic: chronosData.isPublic
-        }),
+      blockchainResult = await createTimeCapsuleOnBlockchain({
+        name: chronosData.name,
+        description: chronosData.description,
+        openDate: chronosData.openDate,
+        recipients: userWalletAddresses
       });
       
-      if (blockchainResponse.ok) {
-        blockchainResult = await blockchainResponse.json();
+      if (blockchainResult.success) {
         console.log('블록체인 생성 결과:', blockchainResult);
       } else {
-        console.error('블록체인 API 호출 실패:', blockchainResponse.status);
+        console.error('블록체인 생성 실패:', blockchainResult.error);
       }
     } catch (blockchainError) {
       console.error('블록체인 생성 실패:', blockchainError);

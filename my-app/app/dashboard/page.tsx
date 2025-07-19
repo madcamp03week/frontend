@@ -4,11 +4,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import WarningModal from '../../components/WarningModal';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { user, userProfile, wallets, logout, createNewWallet } = useAuth();
+  const { user, userProfile, wallets, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const router = useRouter();
 
   const handleCreateNewWallet = async () => {
     if (!user) return;
@@ -20,24 +22,14 @@ export default function DashboardPage() {
       return;
     }
     
-    // 활성 지갑이 없는 경우 바로 생성
-    await createWallet();
+    // 활성 지갑이 없는 경우 바로 지갑 설정 페이지로 이동
+    router.push('/wallet-setup');
   };
 
-  const createWallet = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      await createNewWallet();
-      alert('새로운 지갑이 생성되었습니다!');
-    } catch (error) {
-      console.error('지갑 생성 중 오류:', error);
-      alert('지갑 생성에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setLoading(false);
-      setShowWarningModal(false);
-    }
+  const handleConfirmNewWallet = () => {
+    // 모달에서 확인 버튼 클릭 시 지갑 설정 페이지로 이동
+    setShowWarningModal(false);
+    router.push('/wallet-setup');
   };
 
   if (!user) {
@@ -400,7 +392,7 @@ export default function DashboardPage() {
       <WarningModal
         isOpen={showWarningModal}
         onClose={() => setShowWarningModal(false)}
-        onConfirm={createWallet}
+        onConfirm={handleConfirmNewWallet}
         loading={loading}
       />
     </div>

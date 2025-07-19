@@ -88,15 +88,15 @@ export default function ApiTestPage() {
         name: '블록체인 타임캡슐 테스트',
         description: '블록체인 API 테스트용 타임캡슐입니다.',
         openDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7일 후
-        recipients: [
-          '0x38d41fd88833e17970128e91684cC9A0ec47D905',
-          '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
-        ]
+        content: '블록체인 테스트용 내용',
+        isEncrypted: false,
+        isPublic: false,
+        userId: 'test-user-123'
       };
 
       console.log('전송할 데이터:', JSON.stringify(testData, null, 2));
 
-      const response = await fetch('/api/blockchain/create-capsule', {
+      const response = await fetch('/api/chronos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

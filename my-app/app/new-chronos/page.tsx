@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function NewChronosPage() {
-  const { user } = useAuth();
+  const { user, wallets } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
@@ -28,6 +28,11 @@ export default function NewChronosPage() {
     e.preventDefault();
     
     try {
+      // 사용자의 활성 지갑 주소들만 추출
+      const userWalletAddresses = wallets
+        .filter(wallet => wallet.isActive)
+        .map(wallet => wallet.address);
+      
       // 타임캡슐 데이터 준비
       const chronosData = {
         name,
@@ -42,7 +47,8 @@ export default function NewChronosPage() {
         n: enhancedSecurity ? n : null,
         m: enhancedSecurity ? m : null,
         nonTransferable,
-        userId: user?.uid || 'anonymous'
+        userId: user?.uid || 'anonymous',
+        walletAddresses: userWalletAddresses
       };
 
       // API 호출
@@ -69,7 +75,7 @@ export default function NewChronosPage() {
     }
   };
 
-  const { userProfile, wallets, logout, createNewWallet } = useAuth();
+  const { userProfile, logout, createNewWallet } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 

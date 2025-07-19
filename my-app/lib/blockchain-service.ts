@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-import { CONTRACT_ABI } from '../../../../lib/contract-abi';
+import { CONTRACT_ABI } from './contract-abi';
 import AWS from 'aws-sdk';
 
 // 환경 변수에서 설정 가져오기 (서버 사이드)
@@ -123,66 +122,50 @@ async function uploadIPFSMetadata(chronosData: {
   }
 }
 
-// 타임캡슐 생성 API
-export async function POST(request: NextRequest) {
+// 타임캡슐 생성 함수 (API 호출 없이 직접 사용)
+export async function createTimeCapsuleOnBlockchain(data: {
+  name: string;
+  description: string;
+  openDate: Date | null;
+  recipients?: string[];
+}) {
   try {
-    const body = await request.json();
-    console.log('받은 요청 데이터:', JSON.stringify(body, null, 2));
+    const { name, description, openDate, recipients } = data;
     
-    const { name, description, openDate, recipients } = body;
-    console.log('추출된 recipients:', recipients);
-    console.log('recipients 타입:', typeof recipients);
-    console.log('recipients가 배열인가?', Array.isArray(recipients));
+    // 기본 recipients 설정
+    const defaultRecipients = [
+      '0x38d41fd88833e17970128e91684cC9A0ec47D905',
+      '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
+    ];
+    
+    const finalRecipients = recipients || defaultRecipients;
 
     // recipients 검증
-    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
-      console.log('recipients 검증 실패:', { recipients, isArray: Array.isArray(recipients), length: recipients?.length });
-      return NextResponse.json({
-        success: false,
-        error: 'recipients 배열이 필요하며 비어있을 수 없습니다.'
-      }, { status: 400 });
+    if (!finalRecipients || !Array.isArray(finalRecipients) || finalRecipients.length === 0) {
+      throw new Error('recipients 배열이 필요하며 비어있을 수 없습니다.');
     }
 
     // 각 recipient가 유효한 이더리움 주소인지 검증
-    for (const recipient of recipients) {
+    for (const recipient of finalRecipients) {
       if (!ethers.isAddress(recipient)) {
-        return NextResponse.json({
-          success: false,
-          error: `유효하지 않은 이더리움 주소입니다: ${recipient}`
-        }, { status: 400 });
+        throw new Error(`유효하지 않은 이더리움 주소입니다: ${recipient}`);
       }
     }
 
     if (!PRIVATE_KEY) {
-      return NextResponse.json({
-        success: false,
-        error: '서비스 지갑 개인키가 설정되지 않았습니다.'
-      }, { status: 500 });
+      throw new Error('서비스 지갑 개인키가 설정되지 않았습니다.');
     }
 
     if (!CONTRACT_ADDRESS) {
-      return NextResponse.json({
-        success: false,
-        error: '스마트컨트랙트 주소가 설정되지 않았습니다.'
-      }, { status: 500 });
+      throw new Error('스마트컨트랙트 주소가 설정되지 않았습니다.');
     }
 
     // IPFS 메타데이터 업로드
-    let ipfsResult = null;
-    try {
-      ipfsResult = await uploadIPFSMetadata({
-        name,
-        description,
-        openDate: openDate ? new Date(openDate) : null
-      });
-      console.log('IPFS 메타데이터 업로드 성공:', ipfsResult);
-    } catch (ipfsError) {
-      console.error('IPFS 메타데이터 업로드 실패:', ipfsError);
-      return NextResponse.json({
-        success: false,
-        error: 'IPFS 메타데이터 업로드에 실패했습니다.'
-      }, { status: 500 });
-    }
+    const ipfsResult = await uploadIPFSMetadata({
+      name,
+      description,
+      openDate: openDate ? new Date(openDate) : null
+    });
 
     // Provider 초기화
     const provider = new ethers.JsonRpcProvider(INFURA_URL);
@@ -204,7 +187,7 @@ export async function POST(request: NextRequest) {
 
     // 스마트컨트랙트 함수 호출 (IPFS CID 포함)
     const tx = await contract.createCapsule(
-      recipients, // 요청에서 받은 recipients 배열
+      finalRecipients,
       name,
       description,
       openDateTimestamp,
@@ -217,18 +200,89 @@ export async function POST(request: NextRequest) {
     
     console.log('타임캡슐 생성 트랜잭션 완료:', receipt.hash);
     
-    return NextResponse.json({
+    return {
       success: true,
       transactionHash: receipt.hash,
       blockNumber: Number(receipt.blockNumber),
       ipfs: ipfsResult
-    });
+    };
 
   } catch (error) {
     console.error('타임캡슐 생성 실패:', error);
-    return NextResponse.json({
+    return {
       success: false,
       error: error instanceof Error ? error.message : '알 수 없는 오류'
-    }, { status: 500 });
+    };
+  }
+}
+
+// 서비스 지갑 정보 조회 함수
+export async function getServiceWalletInfo() {
+  try {
+    if (!PRIVATE_KEY) {
+      throw new Error('서비스 지갑 개인키가 설정되지 않았습니다.');
+    }
+
+    if (!INFURA_URL) {
+      throw new Error('Infura URL이 설정되지 않았습니다.');
+    }
+
+    // Provider 초기화
+    const provider = new ethers.JsonRpcProvider(INFURA_URL);
+    
+    // 서비스 지갑 초기화
+    const serviceWallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    
+    // 지갑 잔액 확인
+    const balance = await provider.getBalance(serviceWallet.address);
+    
+    return {
+      success: true,
+      wallet: {
+        address: serviceWallet.address,
+        isConnected: true,
+        balance: ethers.formatEther(balance),
+        message: '서비스 지갑이 연결되어 있습니다.'
+      }
+    };
+
+  } catch (error) {
+    console.error('서비스 지갑 정보 조회 실패:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    };
+  }
+}
+
+// 네트워크 정보 조회 함수
+export async function getNetworkInfo() {
+  try {
+    if (!INFURA_URL) {
+      throw new Error('Infura URL이 설정되지 않았습니다.');
+    }
+
+    // Provider 초기화
+    const provider = new ethers.JsonRpcProvider(INFURA_URL);
+    
+    // 네트워크 정보 조회
+    const network = await provider.getNetwork();
+    const blockNumber = await provider.getBlockNumber();
+    
+    return {
+      success: true,
+      network: {
+        name: network.name,
+        chainId: Number(network.chainId),
+        blockNumber: blockNumber
+      }
+    };
+
+  } catch (error) {
+    console.error('네트워크 정보 조회 실패:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    };
   }
 } 

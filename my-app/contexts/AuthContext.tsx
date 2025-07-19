@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { createPolygonWallet } from '../lib/wallet';
-import { encryptPrivateKey } from '../lib/crypto';
+import { encryptPrivateKey, encryptPrivateKeyWithPassword } from '../lib/crypto';
 import { 
   saveUserProfile, 
   saveWalletData, 
@@ -25,6 +25,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   createNewWallet: () => Promise<void>;
+  createNewWalletWithPassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -38,6 +39,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => {},
   signIn: async () => {},
   createNewWallet: async () => {},
+  createNewWalletWithPassword: async () => {},
 });
 
 export const useAuth = () => {
@@ -72,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         network: 'polygon',
         isActive: true,
         label: '기본 지갑',
+        userMade: false, // 시스템에서 자동 생성
       });
       
       // serverTimestamp를 Date로 변환
@@ -179,33 +182,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUserProfile(profileWithDates);
       
-      // 폴리곤 지갑 생성
-      const newWallet = createPolygonWallet();
+      // 지갑 설정 페이지로 이동하도록 설정
+      setShouldRedirectToWalletSetup(true);
       
-      // Private Key 암호화 (시스템 키만 사용)
-      const encryptedPrivateKey = encryptPrivateKey(newWallet.privateKey);
-      
-      // Firestore에 지갑 정보 저장 (암호화된 Private Key 포함)
-      const savedWallet = await saveWalletData({
-        userId: user.uid,
-        address: newWallet.address,
-        encryptedPrivateKey: encryptedPrivateKey,
-        network: 'polygon',
-        isActive: true,
-        label: '기본 지갑',
-      });
-      
-      // serverTimestamp를 Date로 변환
-      const walletWithDates = {
-        ...savedWallet,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      setWallets([walletWithDates]);
-      
-      console.log('새로운 폴리곤 지갑이 생성되었습니다:', savedWallet.address);
-      console.log('Private Key가 시스템 키로 암호화되어 저장되었습니다.');
+      console.log('회원가입 완료. 지갑 설정 페이지로 이동합니다.');
       
     } catch (error) {
       console.error('회원가입 중 오류:', error);
@@ -246,6 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         network: 'polygon',
         isActive: true,
         label: '기본 지갑',
+        userMade: false, // 시스템에서 자동 생성
       });
       
       // serverTimestamp를 Date로 변환
@@ -264,6 +245,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('새로운 폴리곤 지갑이 생성되었습니다:', savedWallet.address);
       console.log('Private Key가 시스템 키로 암호화되어 저장되었습니다.');
       
+    } catch (error) {
+      console.error('지갑 생성 중 오류:', error);
+      throw error;
+    }
+  };
+
+  const createNewWalletWithPassword = async (password: string) => {
+    if (!user) return;
+
+    try {
+      // 기존 활성 지갑들을 비활성화
+      const activeWallets = wallets.filter(wallet => wallet.isActive);
+      for (const wallet of activeWallets) {
+        await deactivateWallet(wallet.id);
+      }
+
+      // 새로운 폴리곤 지갑 생성
+      const newWallet = createPolygonWallet();
+
+      // Private Key 암호화 (사용자 비밀번호로 암호화)
+      const encryptedPrivateKey = encryptPrivateKeyWithPassword(newWallet.privateKey, password);
+
+      // Firestore에 지갑 정보 저장 (암호화된 Private Key 포함)
+      const savedWallet = await saveWalletData({
+        userId: user.uid,
+        address: newWallet.address,
+        encryptedPrivateKey: encryptedPrivateKey,
+        network: 'polygon',
+        isActive: true,
+        label: '기본 지갑',
+        userMade: true, // 사용자가 직접 생성한 지갑
+      });
+
+      // serverTimestamp를 Date로 변환
+      const walletWithDates = {
+        ...savedWallet,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // 기존 지갑들을 비활성화 상태로 업데이트하고 새 지갑만 활성으로 설정
+      setWallets(prev => [
+        ...prev.map(wallet => ({ ...wallet, isActive: false })),
+        walletWithDates
+      ]);
+
+      console.log('새로운 폴리곤 지갑이 생성되었습니다:', savedWallet.address);
+      console.log('Private Key가 사용자 비밀번호로 암호화되어 저장되었습니다.');
+
     } catch (error) {
       console.error('지갑 생성 중 오류:', error);
       throw error;
@@ -291,6 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     createNewWallet,
+    createNewWalletWithPassword,
   };
 
   return (

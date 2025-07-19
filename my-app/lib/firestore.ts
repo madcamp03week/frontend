@@ -52,11 +52,13 @@ export const saveUserProfile = async (userProfile: Omit<UserProfile, 'createdAt'
       updatedAt: serverTimestamp(),
     };
     
+    console.log('사용자 프로필 저장 시도:', userProfile.uid, cleanUserData);
     await setDoc(userRef, cleanUserData);
-    console.log('사용자 프로필이 저장되었습니다:', userProfile.uid);
+    console.log('사용자 프로필이 성공적으로 저장되었습니다:', userProfile.uid);
     return cleanUserData;
   } catch (error) {
     console.error('사용자 프로필 저장 오류:', error);
+    console.error('저장하려던 데이터:', userProfile);
     throw new Error('사용자 프로필을 저장할 수 없습니다.');
   }
 };
@@ -64,11 +66,13 @@ export const saveUserProfile = async (userProfile: Omit<UserProfile, 'createdAt'
 // 사용자 프로필 조회
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
+    console.log('사용자 프로필 조회 시도:', uid);
     const userRef = doc(firestore, 'users', uid);
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
       const data = userSnap.data();
+      console.log('사용자 프로필을 찾았습니다:', uid, data);
       return {
         ...data,
         createdAt: data.createdAt?.toDate() || new Date(),
@@ -80,6 +84,7 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
     }
   } catch (error) {
     console.error('사용자 프로필 조회 오류:', error);
+    console.error('조회하려던 UID:', uid);
     throw new Error('사용자 프로필을 조회할 수 없습니다.');
   }
 };
@@ -133,13 +138,18 @@ export const saveWalletData = async (walletData: Omit<WalletData, 'id' | 'create
 // 사용자의 모든 지갑 조회
 export const getUserWallets = async (userId: string): Promise<WalletData[]> => {
   try {
+    console.log('사용자 지갑 조회 시도:', userId);
     const walletsRef = collection(firestore, 'wallets');
     const q = query(walletsRef, where('userId', '==', userId), where('isActive', '==', true));
+    console.log('지갑 조회 쿼리 실행:', q);
     const querySnapshot = await getDocs(q);
+    
+    console.log('지갑 조회 결과 - 문서 수:', querySnapshot.size);
     
     const wallets: WalletData[] = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      console.log('지갑 문서 데이터:', doc.id, data);
       wallets.push({
         ...data,
         createdAt: data.createdAt?.toDate() || new Date(),
@@ -147,9 +157,11 @@ export const getUserWallets = async (userId: string): Promise<WalletData[]> => {
       } as WalletData);
     });
     
+    console.log('최종 반환할 지갑 목록:', wallets);
     return wallets;
   } catch (error) {
     console.error('사용자 지갑 조회 오류:', error);
+    console.error('조회하려던 사용자 ID:', userId);
     throw new Error('사용자 지갑을 조회할 수 없습니다.');
   }
 };

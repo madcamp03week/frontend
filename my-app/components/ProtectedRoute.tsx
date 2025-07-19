@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, hasWallet, dataLoaded } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,6 +17,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (user && !loading && dataLoaded && !hasWallet) {
+      console.log('ProtectedRoute: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
+      router.push('/wallet-setup');
+    }
+  }, [user, loading, dataLoaded, hasWallet, router]);
 
   if (loading) {
     return (

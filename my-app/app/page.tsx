@@ -6,12 +6,22 @@ import SubscribeFooter from './components/SubscribeFooter';
 import CompanyPage from './company/page';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 
 export default function Home() {
-  const { user, loading, logout, userProfile, wallets } = useAuth();
+  const { user, loading, logout, userProfile, wallets, hasWallet, dataLoaded } = useAuth();
   const [showUserInfo, setShowUserInfo] = useState(true);
+  const router = useRouter();
+
+  // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
+  useEffect(() => {
+    if (user && !loading && dataLoaded && !hasWallet) {
+      console.log('홈페이지: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
+      router.push('/wallet-setup');
+    }
+  }, [user, loading, dataLoaded, hasWallet, router]);
 
   return (
     <main className="min-h-screen bg-[#1a1a1a] text-white font-sans overflow-hidden">
@@ -67,14 +77,14 @@ export default function Home() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
               <div>
                 <h2 className="text-xl font-semibold text-blue-400">
-                  환영합니다, {user.displayName}님!
+                  Chronos에 오신 것을 환영합니다{userProfile?.displayName ? `, ${userProfile.displayName}님!` : ''}
                 </h2>
                 {wallets.filter(wallet => wallet.isActive).length > 0 && (
                   <p className="text-sm text-gray-400 mt-1">
-                    폴리곤 지갑: 활성 {wallets.filter(wallet => wallet.isActive).length}개
+                    내 지갑:
                     {wallets.filter(wallet => wallet.isActive)[0] && (
                       <span className="ml-2">
-                        (주 지갑: {wallets.filter(wallet => wallet.isActive)[0].address.slice(0, 6)}...{wallets.filter(wallet => wallet.isActive)[0].address.slice(-4)})
+                        ({wallets.filter(wallet => wallet.isActive)[0].address.slice(0, 8)}...{wallets.filter(wallet => wallet.isActive)[0].address.slice(-6)})
                       </span>
                     )}
                   </p>
@@ -94,7 +104,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-sm transition-colors"
                   >
-                    지갑 확인
+                    Polyscan에서 확인하기
                   </a>
                 )}
               </div>

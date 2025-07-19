@@ -10,6 +10,7 @@ import {
   saveWalletData, 
   getUserWithWallets,
   deactivateWallet,
+  updateUserProfile,
   type UserProfile,
   type WalletData 
 } from '../lib/firestore';
@@ -21,11 +22,14 @@ interface AuthContextType {
   wallets: WalletData[];
   shouldRedirectToWalletSetup: boolean;
   setShouldRedirectToWalletSetup: (value: boolean) => void;
+  hasWallet: boolean;
+  dataLoaded: boolean;
   logout: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   createNewWallet: () => Promise<void>;
   createNewWalletWithPassword: (password: string) => Promise<void>;
+  updateDisplayName: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -35,11 +39,14 @@ const AuthContext = createContext<AuthContextType>({
   wallets: [],
   shouldRedirectToWalletSetup: false,
   setShouldRedirectToWalletSetup: () => {},
+  hasWallet: false,
+  dataLoaded: false,
   logout: async () => {},
   signUp: async () => {},
   signIn: async () => {},
   createNewWallet: async () => {},
   createNewWalletWithPassword: async () => {},
+  updateDisplayName: async () => {},
 });
 
 export const useAuth = () => {
@@ -56,6 +63,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wallets, setWallets] = useState<WalletData[]>([]);
   const [shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // 데이터 로드 완료 상태 추가
+  
+  // 지갑 보유 여부 계산 (데이터가 로드된 후에만 계산)
+  const hasWallet = dataLoaded ? wallets.some(wallet => wallet.isActive) : false;
+  console.log('지갑 보유 여부 계산:', { 
+    walletsCount: wallets.length, 
+    activeWallets: wallets.filter(w => w.isActive).length, 
+    hasWallet,
+    dataLoaded 
+  });
 
   // OAuth 사용자를 위한 지갑 생성 함수
   const createWalletForOAuthUser = async (userId: string) => {
@@ -102,15 +119,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // 사용자가 로그인되어 있으면 Firestore에서 데이터 로드
       if (user) {
+        console.log('사용자 로그인 감지:', user.uid, user.email);
+        setDataLoaded(false); // 새로운 사용자 로그인 시 데이터 로드 상태 초기화
         try {
           const { user: profile, wallets: userWallets } = await getUserWithWallets(user.uid);
+          console.log('Firestore에서 로드된 데이터:', { 
+            profile: profile ? '있음' : '없음', 
+            walletsCount: userWallets.length,
+            wallets: userWallets.map(w => ({ id: w.id, address: w.address, isActive: w.isActive }))
+          });
           if (profile) {
             setUserProfile({
               ...profile,
               createdAt: new Date(profile.createdAt),
               updatedAt: new Date(profile.updatedAt),
             });
+          } else {
+            // 프로필이 없는 경우 새로 생성 (OAuth 로그인 사용자 포함)
+            console.log('사용자 프로필이 없습니다. 새로 생성합니다:', user.uid);
+            try {
+              const newProfile = await saveUserProfile({
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || undefined,
+                photoURL: user.photoURL || undefined,
+              });
+              setUserProfile({
+                ...newProfile,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+              
+              // OAuth 로그인 사용자의 경우 지갑 설정 페이지로 이동하도록 설정
+              if (user.providerData.length > 0) {
+                console.log('OAuth 사용자 - 지갑 설정 페이지로 이동하도록 설정');
+                setShouldRedirectToWalletSetup(true);
+              }
+            } catch (profileError) {
+              console.error('프로필 생성 오류:', profileError);
+            }
           }
+          
           setWallets(userWallets.map(wallet => ({
             ...wallet,
             createdAt: new Date(wallet.createdAt),
@@ -127,6 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // 프로필이 없는 경우 새로 생성
           if (user) {
             try {
+              console.log('오류로 인해 사용자 프로필을 새로 생성합니다:', user.uid);
               const newProfile = await saveUserProfile({
                 uid: user.uid,
                 email: user.email || '',
@@ -152,9 +202,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUserProfile(null);
         setWallets([]);
+        setDataLoaded(true); // 로그아웃 상태에서도 데이터 로드 완료 표시
       }
       
       setLoading(false);
+      if (user) {
+        setDataLoaded(true); // 로그인된 사용자의 경우에만 데이터 로드 완료 표시
+      }
     });
 
     return () => unsubscribe();
@@ -300,6 +354,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateDisplayName = async (displayName: string) => {
+    if (!user) return;
+
+    try {
+      await updateUserProfile(user.uid, { displayName });
+      setUserProfile(prev => prev ? { ...prev, displayName, updatedAt: new Date() } : null);
+      console.log('닉네임이 성공적으로 업데이트되었습니다.');
+    } catch (error) {
+      console.error('닉네임 업데이트 중 오류:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -317,11 +384,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     wallets,
     shouldRedirectToWalletSetup,
     setShouldRedirectToWalletSetup,
+    hasWallet,
+    dataLoaded,
     logout,
     signUp,
     signIn,
     createNewWallet,
     createNewWalletWithPassword,
+    updateDisplayName,
   };
 
   return (

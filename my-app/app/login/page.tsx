@@ -9,6 +9,7 @@ import {
 import { auth } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 
 export default function LoginPage() {
@@ -18,7 +19,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup } = useAuth();
+  const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup, user, hasWallet, loading: authLoading, dataLoaded } = useAuth();
+
+  // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
+  useEffect(() => {
+    if (user && !authLoading && dataLoaded && !hasWallet) {
+      console.log('로그인 페이지: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
+      router.push('/wallet-setup');
+    }
+  }, [user, authLoading, dataLoaded, hasWallet, router]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,14 +100,21 @@ export default function LoginPage() {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
       
-      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
-      if (shouldRedirectToWalletSetup) {
-        setShouldRedirectToWalletSetup(false);
-        router.push('/wallet-setup');
-      } else {
-        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      // OAuth 로그인 성공 후 사용자 프로필 확인 및 생성
+      if (result.user) {
+        console.log('Google 로그인 성공:', result.user.uid);
+        // AuthContext의 onAuthStateChanged에서 자동으로 프로필을 생성하므로
+        // 잠시 기다린 후 리다이렉트
+        setTimeout(() => {
+          if (shouldRedirectToWalletSetup) {
+            setShouldRedirectToWalletSetup(false);
+            router.push('/wallet-setup');
+          } else {
+            router.push('/'); // 기존 사용자는 홈페이지로 이동
+          }
+        }, 1000);
       }
     } catch (error: any) {
       console.error('Google 로그인 오류:', error);
@@ -144,14 +160,21 @@ export default function LoginPage() {
 
     try {
       const provider = new GithubAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
       
-      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
-      if (shouldRedirectToWalletSetup) {
-        setShouldRedirectToWalletSetup(false);
-        router.push('/wallet-setup');
-      } else {
-        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      // OAuth 로그인 성공 후 사용자 프로필 확인 및 생성
+      if (result.user) {
+        console.log('GitHub 로그인 성공:', result.user.uid);
+        // AuthContext의 onAuthStateChanged에서 자동으로 프로필을 생성하므로
+        // 잠시 기다린 후 리다이렉트
+        setTimeout(() => {
+          if (shouldRedirectToWalletSetup) {
+            setShouldRedirectToWalletSetup(false);
+            router.push('/wallet-setup');
+          } else {
+            router.push('/'); // 기존 사용자는 홈페이지로 이동
+          }
+        }, 1000);
       }
     } catch (error: any) {
       console.error('GitHub 로그인 오류:', error);

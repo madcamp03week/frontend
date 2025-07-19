@@ -12,7 +12,7 @@ export const initializeBlockchain = () => {
   return true;
 };
 
-// 타임캡슐 생성 함수 (API를 통해 처리)
+// 타임캡슐 생성 함수 (통합 API를 통해 처리)
 export const createTimeCapsuleOnChain = async (chronosData: {
   name: string;
   description: string;
@@ -29,12 +29,21 @@ export const createTimeCapsuleOnChain = async (chronosData: {
       ]
     };
 
-    const response = await fetch('/api/blockchain/create-capsule', {
+    // 통합 API 사용
+    const response = await fetch('/api/chronos', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(dataToSend),
+      body: JSON.stringify({
+        name: dataToSend.name,
+        description: dataToSend.description,
+        openDate: dataToSend.openDate,
+        content: '', // 빈 내용으로 DB 저장
+        isEncrypted: false,
+        isPublic: false,
+        userId: 'blockchain-only'
+      }),
     });
 
     const result = await response.json();

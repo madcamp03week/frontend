@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         network: 'polygon',
         isActive: true,
         label: '기본 지갑',
+        userMade: false, // 시스템에서 자동 생성
       });
       
       // serverTimestamp를 Date로 변환
@@ -193,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         network: 'polygon',
         isActive: true,
         label: '기본 지갑',
+        userMade: false, // 시스템에서 자동 생성
       });
       
       // serverTimestamp를 Date로 변환
@@ -246,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         network: 'polygon',
         isActive: true,
         label: '기본 지갑',
+        userMade: false, // 시스템에서 자동 생성
       });
       
       // serverTimestamp를 Date로 변환

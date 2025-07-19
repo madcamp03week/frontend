@@ -22,10 +22,8 @@ service cloud.firestore {
         // 암호화된 Private Key가 있는 경우 유효성 검사
         (request.resource.data.encryptedPrivateKey == null || 
          request.resource.data.encryptedPrivateKey is string);
-    }
-    
-    // 지갑 컬렉션 쿼리 규칙 (본인의 지갑만 조회 가능)
-    match /wallets/{walletId} {
+      
+      // 컬렉션 쿼리: 본인의 지갑만 조회 가능
       allow list: if request.auth != null && 
         request.auth.uid == resource.data.userId;
     }

@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nicknameLoading, setNicknameLoading] = useState(false);
+  const [showInactiveWallets, setShowInactiveWallets] = useState(false);
   const router = useRouter();
 
   // 사용자 프로필이 로드되면 닉네임 상태 초기화
@@ -369,15 +370,77 @@ export default function DashboardPage() {
                 {/* 비활성 지갑이 있는 경우 표시 */}
                 {wallets.filter(wallet => !wallet.isActive).length > 0 && (
                   <div className="backdrop-blur-sm bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6">
-                    <div className="flex items-center mb-3">
-                      <svg className="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.314 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      <span className="text-yellow-400 font-semibold text-lg">
-                        비활성 지갑 {wallets.filter(wallet => !wallet.isActive).length}개 감지됨
-                      </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <svg className="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.314 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <span className="text-yellow-400 font-semibold text-lg">
+                          비활성 지갑 {wallets.filter(wallet => !wallet.isActive).length}개 감지됨
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowInactiveWallets(!showInactiveWallets)}
+                        className="flex items-center px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 border border-yellow-500/30 hover:border-yellow-400/50 text-yellow-300 hover:text-yellow-200 text-sm rounded-lg transition-all duration-300"
+                      >
+                        <svg 
+                          className={`w-4 h-4 mr-1 transition-transform duration-300 ${showInactiveWallets ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        {showInactiveWallets ? '숨기기' : '보기'}
+                      </button>
                     </div>
-                    <p className="text-gray-300 leading-relaxed">
+                    
+                    {showInactiveWallets && (
+                      <div className="mt-4 space-y-3">
+                        {wallets.filter(wallet => !wallet.isActive).map((wallet, index) => (
+                          <div 
+                            key={wallet.id}
+                            className="group/address relative backdrop-blur-sm bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-500/30 rounded-xl p-4 hover:border-gray-400/50 transition-all duration-300"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="text-gray-400 text-sm mb-2 flex items-center">
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                  </svg>
+                                  비활성 지갑 {index + 1}
+                                </p>
+                                <div className="group/address relative">
+                                  <p className="font-mono text-sm break-all bg-black/30 p-3 rounded-lg border border-white/10 hover:border-gray-400/50 transition-all duration-300">
+                                    {wallet.address}
+                                  </p>
+                                  <button 
+                                    onClick={() => navigator.clipboard.writeText(wallet.address)}
+                                    className="absolute top-2 right-2 p-2 opacity-0 group-hover/address:opacity-100 transition-opacity duration-300 hover:bg-white/10 rounded-lg"
+                                    title="주소 복사"
+                                  >
+                                    <svg className="w-4 h-4 text-gray-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                  생성일: {wallet.createdAt.toLocaleDateString('ko-KR')}
+                                </p>
+                              </div>
+                              <div className="ml-4">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-1"></div>
+                                  비활성
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p className="text-gray-300 leading-relaxed mt-4">
                       새로운 지갑을 발급하면 기존 타임캡슐에 대한 접근 권한이 완전히 소실됩니다. 
                       이 작업은 되돌릴 수 없으니 신중히 고려해주세요.
                     </p>

@@ -11,6 +11,8 @@ import {
   getUserWithWallets,
   deactivateWallet,
   updateUserProfile,
+  getAllUserWallets,
+  getUserProfile,
   type UserProfile,
   type WalletData 
 } from '../lib/firestore';
@@ -122,11 +124,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('사용자 로그인 감지:', user.uid, user.email);
         setDataLoaded(false); // 새로운 사용자 로그인 시 데이터 로드 상태 초기화
         try {
-          const { user: profile, wallets: userWallets } = await getUserWithWallets(user.uid);
+          const [profile, userWallets] = await Promise.all([
+            getUserProfile(user.uid),
+            getAllUserWallets(user.uid)
+          ]);
           console.log('Firestore에서 로드된 데이터:', { 
             profile: profile ? '있음' : '없음', 
             walletsCount: userWallets.length,
-            wallets: userWallets.map(w => ({ id: w.id, address: w.address, isActive: w.isActive }))
+            wallets: userWallets.map((w: WalletData) => ({ id: w.id, address: w.address, isActive: w.isActive }))
           });
           if (profile) {
             setUserProfile({
@@ -166,8 +171,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             updatedAt: new Date(wallet.updatedAt),
           })));
           
-          // OAuth 로그인 사용자이고 지갑이 없는 경우 지갑 설정 페이지로 이동하도록 설정
-          if (userWallets.length === 0 && user.providerData.length > 0) {
+          // OAuth 로그인 사용자이고 활성 지갑이 없는 경우 지갑 설정 페이지로 이동하도록 설정
+          const activeWallets = userWallets.filter((wallet: WalletData) => wallet.isActive);
+          if (activeWallets.length === 0 && user.providerData.length > 0) {
             console.log('OAuth 사용자 - 지갑 설정 페이지로 이동하도록 설정');
             setShouldRedirectToWalletSetup(true);
           }
@@ -261,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       // 기존 활성 지갑들을 비활성화
-      const activeWallets = wallets.filter(wallet => wallet.isActive);
+      const activeWallets = wallets.filter((wallet: WalletData) => wallet.isActive);
       for (const wallet of activeWallets) {
         await deactivateWallet(wallet.id);
       }
@@ -310,7 +316,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // 기존 활성 지갑들을 비활성화
-      const activeWallets = wallets.filter(wallet => wallet.isActive);
+      const activeWallets = wallets.filter((wallet: WalletData) => wallet.isActive);
       for (const wallet of activeWallets) {
         await deactivateWallet(wallet.id);
       }

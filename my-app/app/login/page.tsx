@@ -2,16 +2,14 @@
 
 import { useState } from 'react';
 import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider,
-  User
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import type { Auth } from 'firebase/auth';
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,62 +18,68 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup } = useAuth();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setLoading(true);
     setError('');
 
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await signUp(email, password);
+        // 회원가입 성공 시 바로 지갑 설정 페이지로 이동
+        router.push('/wallet-setup');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signIn(email, password);
+        router.push('/'); // 로그인 성공 시 홈페이지로 이동
       }
-      router.push('/'); // 로그인 성공 시 홈페이지로 이동
     } catch (error: any) {
       console.error('로그인 오류:', error);
       // 한국어 에러 메시지
+      let errorMessage = '';
       switch (error.code) {
         case 'auth/configuration-not-found':
-          setError('Firebase 설정에 문제가 있습니다. 관리자에게 문의해주세요.');
+          errorMessage = 'Firebase 설정에 문제가 있습니다. 관리자에게 문의해주세요.';
           break;
         case 'auth/user-not-found':
-          setError('등록되지 않은 이메일입니다.');
+          errorMessage = '등록되지 않은 이메일입니다.';
           break;
         case 'auth/wrong-password':
-          setError('비밀번호가 올바르지 않습니다.');
+          errorMessage = '비밀번호가 올바르지 않습니다.';
           break;
         case 'auth/email-already-in-use':
-          setError('이미 사용 중인 이메일입니다.');
+          errorMessage = '이미 사용 중인 이메일입니다.';
           break;
         case 'auth/weak-password':
-          setError('비밀번호는 최소 6자 이상이어야 합니다.');
+          errorMessage = '비밀번호는 최소 6자 이상이어야 합니다.';
           break;
         case 'auth/invalid-email':
-          setError('올바른 이메일 형식이 아닙니다.');
+          errorMessage = '올바른 이메일 형식이 아닙니다.';
           break;
         case 'auth/too-many-requests':
-          setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.');
+          errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
           break;
         case 'auth/user-disabled':
-          setError('비활성화된 계정입니다. 관리자에게 문의해주세요.');
+          errorMessage = '비활성화된 계정입니다. 관리자에게 문의해주세요.';
           break;
         case 'auth/operation-not-allowed':
-          setError('이 로그인 방법이 허용되지 않습니다.');
+          errorMessage = '이 로그인 방법이 허용되지 않습니다.';
           break;
         case 'auth/network-request-failed':
-          setError('네트워크 연결을 확인해주세요.');
+          errorMessage = '네트워크 연결을 확인해주세요.';
           break;
         case 'auth/invalid-credential':
-          setError('잘못된 인증 정보입니다.');
+          errorMessage = '잘못된 인증 정보입니다.';
           break;
         case 'auth/requires-recent-login':
-          setError('보안을 위해 다시 로그인해주세요.');
+          errorMessage = '보안을 위해 다시 로그인해주세요.';
           break;
         default:
-          setError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+          errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
       }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -88,41 +92,47 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push('/'); // 로그인 성공 시 홈페이지로 이동
+      
+      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
+      if (shouldRedirectToWalletSetup) {
+        setShouldRedirectToWalletSetup(false);
+        router.push('/wallet-setup');
+      } else {
+        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      }
     } catch (error: any) {
       console.error('Google 로그인 오류:', error);
       // 한국어 에러 메시지
+      let errorMessage = '';
       switch (error.code) {
         case 'auth/configuration-not-found':
-          setError('Firebase 설정에 문제가 있습니다. 관리자에게 문의해주세요.');
+          errorMessage = 'Firebase 설정에 문제가 있습니다. 관리자에게 문의해주세요.';
           break;
         case 'auth/popup-closed-by-user':
-          setError('로그인 창이 닫혔습니다. 다시 시도해주세요.');
+          errorMessage = '로그인 창이 닫혔습니다. 다시 시도해주세요.';
           break;
         case 'auth/popup-blocked':
-          setError('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+          errorMessage = '팝업이 차단되었습니다. 팝업 차단을 해제해주세요.';
           break;
         case 'auth/account-exists-with-different-credential':
-          setError('이미 다른 방법으로 가입된 계정입니다.');
+          errorMessage = '이미 다른 방법으로 가입된 계정입니다.';
           break;
         case 'auth/cancelled-popup-request':
-          setError('로그인 요청이 취소되었습니다.');
-          break;
-        case 'auth/popup-closed-by-user':
-          setError('로그인 창이 닫혔습니다. 다시 시도해주세요.');
+          errorMessage = '로그인 요청이 취소되었습니다.';
           break;
         case 'auth/unauthorized-domain':
-          setError('허용되지 않은 도메인입니다.');
+          errorMessage = '허용되지 않은 도메인입니다.';
           break;
         case 'auth/operation-not-allowed':
-          setError('Google 로그인이 허용되지 않습니다.');
+          errorMessage = 'Google 로그인이 허용되지 않습니다.';
           break;
         case 'auth/network-request-failed':
-          setError('네트워크 연결을 확인해주세요.');
+          errorMessage = '네트워크 연결을 확인해주세요.';
           break;
         default:
-          setError('Google 로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+          errorMessage = 'Google 로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
       }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -135,56 +145,67 @@ export default function LoginPage() {
     try {
       const provider = new GithubAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push('/'); // 로그인 성공 시 홈페이지로 이동
+      
+      // OAuth 로그인 후 지갑 설정 페이지로 이동 여부 확인
+      if (shouldRedirectToWalletSetup) {
+        setShouldRedirectToWalletSetup(false);
+        router.push('/wallet-setup');
+      } else {
+        router.push('/'); // 기존 사용자는 홈페이지로 이동
+      }
     } catch (error: any) {
       console.error('GitHub 로그인 오류:', error);
       // 한국어 에러 메시지
+      let errorMessage = '';
       switch (error.code) {
         case 'auth/configuration-not-found':
-          setError('Firebase 설정에 문제가 있습니다. 관리자에게 문의해주세요.');
+          errorMessage = 'Firebase 설정에 문제가 있습니다. 관리자에게 문의해주세요.';
           break;
         case 'auth/popup-closed-by-user':
-          setError('로그인 창이 닫혔습니다. 다시 시도해주세요.');
+          errorMessage = '로그인 창이 닫혔습니다. 다시 시도해주세요.';
           break;
         case 'auth/popup-blocked':
-          setError('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+          errorMessage = '팝업이 차단되었습니다. 팝업 차단을 해제해주세요.';
           break;
         case 'auth/account-exists-with-different-credential':
-          setError('이미 다른 방법으로 가입된 계정입니다.');
+          errorMessage = '이미 다른 방법으로 가입된 계정입니다.';
           break;
         case 'auth/cancelled-popup-request':
-          setError('로그인 요청이 취소되었습니다.');
+          errorMessage = '로그인 요청이 취소되었습니다.';
           break;
         case 'auth/unauthorized-domain':
-          setError('허용되지 않은 도메인입니다.');
+          errorMessage = '허용되지 않은 도메인입니다.';
           break;
         case 'auth/operation-not-allowed':
-          setError('GitHub 로그인이 허용되지 않습니다.');
+          errorMessage = 'GitHub 로그인이 허용되지 않습니다.';
           break;
         case 'auth/network-request-failed':
-          setError('네트워크 연결을 확인해주세요.');
+          errorMessage = '네트워크 연결을 확인해주세요.';
           break;
         case 'auth/oauth-provider-error':
-          setError('GitHub 인증 서비스에 문제가 있습니다.');
+          errorMessage = 'GitHub 인증 서비스에 문제가 있습니다.';
           break;
         default:
-          setError('GitHub 로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+          errorMessage = 'GitHub 로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
       }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full bg-[#1a1a1a] rounded-lg border border-gray-600 shadow-2xl p-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            {isSignUp ? 'Register' : 'Login'}
+          <h2 className="text-center text-3xl font-extrabold text-white mb-8">
+            {isSignUp ? 'Sign Up' : 'Sign In'}
           </h2>
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleEmailAuth}>
+        <form className="space-y-6" onSubmit={handleEmailAuth}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email-address" className="sr-only">
@@ -196,7 +217,9 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-800 placeholder-gray-400 text-white rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border bg-gray-800 placeholder-gray-400 text-white rounded-t-md focus:outline-none focus:z-10 sm:text-sm ${
+                  error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-600 focus:ring-gray-500 focus:border-gray-500'
+                }`}
                 placeholder="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -212,7 +235,9 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-800 placeholder-gray-400 text-white rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border bg-gray-800 placeholder-gray-400 text-white rounded-b-md focus:outline-none focus:z-10 sm:text-sm ${
+                  error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-600 focus:ring-gray-500 focus:border-gray-500'
+                }`}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -226,11 +251,17 @@ export default function LoginPage() {
             </div>
           )}
 
+
+
+
+
+
+
           <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
             >
               {loading ? '처리중...' : (isSignUp ? '회원가입' : '로그인')}
             </button>
@@ -241,7 +272,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-gray-600 text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-gray-600 text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -256,7 +287,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGitHubSignIn}
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-gray-600 text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-gray-600 text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-500"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -268,14 +299,19 @@ export default function LoginPage() {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-blue-400 hover:text-blue-300"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError('');
+              }}
+              className="text-gray-400 hover:text-gray-300"
             >
               {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
             </button>
           </div>
         </form>
       </div>
+
+
     </div>
   );
 } 

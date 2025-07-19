@@ -68,6 +68,9 @@ export default function MyChronosPage() {
                     Chronos 열기
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 border-b border-gray-700">
+                    내용 보기
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 border-b border-gray-700">
                     전송
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 border-b border-gray-700">
@@ -113,6 +116,11 @@ export default function MyChronosPage() {
                           열기
                         </button>
                       )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm">
+                        보기
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <button className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm">

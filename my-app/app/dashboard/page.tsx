@@ -53,34 +53,46 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">대시보드</h1>
-          <button
-            onClick={logout}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md"
-          >
-            로그아웃
-          </button>
+    <div className="min-h-screen bg-[#1a1a1a] text-white">
+      {/* 네비게이션 */}
+      <nav className="w-full flex justify-between items-center px-10 py-6 border-b border-gray-800">
+        <div className="text-2xl font-bold">
+          <a href="/">Chronos</a>
+        </div>
+        <div className="text-sm text-gray-300">
+          Dashboard
+        </div>
+      </nav>
+
+      {/* 메인 컨텐츠 */}
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">대시보드</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 사용자 정보 */}
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">사용자 정보</h2>
-            <div className="space-y-2">
-              <p><span className="text-gray-400">이메일:</span> {user.email}</p>
-              <p><span className="text-gray-400">사용자 ID:</span> {user.uid}</p>
-              <p><span className="text-gray-400">가입일:</span> {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('ko-KR') : '알 수 없음'}</p>
-              {userProfile && (
-                <p><span className="text-gray-400">프로필 생성일:</span> {userProfile.createdAt.toLocaleDateString('ko-KR')}</p>
-              )}
-            </div>
+        {/* 사용자 정보 */}
+        <div className="mb-8">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+            <p className="text-gray-300">
+              <span className="font-medium">이메일:</span> {user.email}
+            </p>
+            <p className="text-gray-300 mt-2">
+              <span className="font-medium">사용자 ID:</span> {user.uid}
+            </p>
+            <p className="text-gray-300 mt-2">
+              <span className="font-medium">가입일:</span> {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('ko-KR') : '알 수 없음'}
+            </p>
+            {userProfile && (
+              <p className="text-gray-300 mt-2">
+                <span className="font-medium">프로필 생성일:</span> {userProfile.createdAt.toLocaleDateString('ko-KR')}
+              </p>
+            )}
           </div>
+        </div>
 
-          {/* 폴리곤 지갑 정보 */}
-          <div className="bg-gray-800 p-6 rounded-lg">
+        {/* 폴리곤 지갑 정보 */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+          <div className="p-6">
             <h2 className="text-xl font-semibold mb-4">폴리곤 지갑</h2>
             {wallets.length > 0 ? (
               <div className="space-y-4">
@@ -151,28 +163,30 @@ export default function DashboardPage() {
         </div>
 
         {/* 폴리곤 네트워크 정보 */}
-        <div className="mt-8 bg-gray-800 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">폴리곤 네트워크 정보</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-gray-400 text-sm">네트워크</p>
-              <p className="font-semibold">Polygon Mainnet</p>
+        <div className="mt-8 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-4">폴리곤 네트워크 정보</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-gray-400 text-sm">네트워크</p>
+                <p className="font-semibold">Polygon Mainnet</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">체인 ID</p>
+                <p className="font-mono">137</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">네이티브 토큰</p>
+                <p className="font-semibold">MATIC</p>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-400 text-sm">체인 ID</p>
-              <p className="font-mono">137</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">네이티브 토큰</p>
-              <p className="font-semibold">MATIC</p>
-            </div>
+            {wallets.filter(wallet => !wallet.isActive).length > 0 && (
+              <div className="mt-4">
+                <p className="text-gray-400 text-sm">비활성 지갑 수</p>
+                <p className="text-lg font-bold text-yellow-400">{wallets.filter(wallet => !wallet.isActive).length}개</p>
+              </div>
+            )}
           </div>
-          {wallets.filter(wallet => !wallet.isActive).length > 0 && (
-            <div className="mt-4">
-              <p className="text-gray-400 text-sm">비활성 지갑 수</p>
-              <p className="text-lg font-bold text-yellow-400">{wallets.filter(wallet => !wallet.isActive).length}개</p>
-            </div>
-          )}
         </div>
       </div>
       

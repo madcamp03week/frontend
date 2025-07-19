@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+// 이 파일은 NewChronosPage 컴포넌트입니다. MyChronosPage와 혼동하지 마세요.
+// 만약 MyChronosPage에서 이 에러가 난다면, app/my-chronos/page.tsx 파일에서 useAuth 등 훅이 조건문/함수/루프 안에서 호출되고 있지 않은지 확인하세요.
+// 아래는 NewChronosPage에서 훅 순서가 올바른 예시입니다.
+
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function NewChronosPage() {
-  const { user, wallets } = useAuth();
+  // 모든 훅은 컴포넌트 최상단에서 한 번만 호출
+  const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
@@ -22,11 +27,20 @@ export default function NewChronosPage() {
   const [tags, setTags] = useState('');
   const [manualAddress, setManualAddress] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
-  
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const toastTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    toastTimeout.current = setTimeout(() => setToast(null), 2500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setLoading(true); // 로딩 시작
     try {
       // 사용자의 활성 지갑 주소들만 추출
       const userWalletAddresses = wallets
@@ -59,27 +73,24 @@ export default function NewChronosPage() {
         },
         body: JSON.stringify(chronosData),
       });
-
       const result = await response.json();
 
       if (response.ok) {
-        alert('타임캡슐이 성공적으로 생성되었습니다!');
-        // 성공 후 대시보드로 이동
-        window.location.href = '/dashboard';
+        showToast('타임캡슐이 성공적으로 생성되었습니다!', 'success');
+        setTimeout(() => {
+          window.location.href = '/my-chronos';
+        }, 1200);
       } else {
-        alert(`타임캡슐 생성 실패: ${result.error}`);
+        showToast(`타임캡슐 생성 실패: ${result.error}`, 'error');
       }
     } catch (error) {
       console.error('타임캡슐 생성 오류:', error);
-      alert('타임캡슐 생성 중 오류가 발생했습니다.');
+      showToast('타임캡슐 생성 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLoading(false); // 로딩 종료
     }
   };
 
-  const { userProfile, logout, createNewWallet } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-
-  
   // 로그인이 필요한 경우
   if (!user) {
     return (
@@ -96,7 +107,21 @@ export default function NewChronosPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-{/* 네비게이션 */}
+      {/* 심플 로딩 오버레이 */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60">
+          <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <div className="text-base text-blue-200">타임캡슐 생성 중...</div>
+        </div>
+      )}
+      {/* 심플 토스트 알림 */}
+      {toast && (
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-sm font-semibold
+          ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          {toast.message}
+        </div>
+      )}
+      {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
         <div className="text-2xl font-bold">
          Chronos
@@ -543,4 +568,4 @@ export default function NewChronosPage() {
       </div>
     </div>
   );
-} 
+}

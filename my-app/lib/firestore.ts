@@ -135,16 +135,47 @@ export const saveWalletData = async (walletData: Omit<WalletData, 'id' | 'create
   }
 };
 
-// 사용자의 모든 지갑 조회
+// 사용자의 모든 지갑 조회 (활성 지갑만)
 export const getUserWallets = async (userId: string): Promise<WalletData[]> => {
   try {
-    console.log('사용자 지갑 조회 시도:', userId);
+    console.log('사용자 활성 지갑 조회 시도:', userId);
     const walletsRef = collection(firestore, 'wallets');
     const q = query(walletsRef, where('userId', '==', userId), where('isActive', '==', true));
-    console.log('지갑 조회 쿼리 실행:', q);
+    console.log('활성 지갑 조회 쿼리 실행:', q);
     const querySnapshot = await getDocs(q);
     
-    console.log('지갑 조회 결과 - 문서 수:', querySnapshot.size);
+    console.log('활성 지갑 조회 결과 - 문서 수:', querySnapshot.size);
+    
+    const wallets: WalletData[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      console.log('활성 지갑 문서 데이터:', doc.id, data);
+      wallets.push({
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as WalletData);
+    });
+    
+    console.log('최종 반환할 활성 지갑 목록:', wallets);
+    return wallets;
+  } catch (error) {
+    console.error('사용자 활성 지갑 조회 오류:', error);
+    console.error('조회하려던 사용자 ID:', userId);
+    throw new Error('사용자 활성 지갑을 조회할 수 없습니다.');
+  }
+};
+
+// 사용자의 모든 지갑 조회 (활성 + 비활성)
+export const getAllUserWallets = async (userId: string): Promise<WalletData[]> => {
+  try {
+    console.log('사용자 모든 지갑 조회 시도:', userId);
+    const walletsRef = collection(firestore, 'wallets');
+    const q = query(walletsRef, where('userId', '==', userId));
+    console.log('모든 지갑 조회 쿼리 실행:', q);
+    const querySnapshot = await getDocs(q);
+    
+    console.log('모든 지갑 조회 결과 - 문서 수:', querySnapshot.size);
     
     const wallets: WalletData[] = [];
     querySnapshot.forEach((doc) => {
@@ -157,12 +188,12 @@ export const getUserWallets = async (userId: string): Promise<WalletData[]> => {
       } as WalletData);
     });
     
-    console.log('최종 반환할 지갑 목록:', wallets);
+    console.log('최종 반환할 모든 지갑 목록:', wallets);
     return wallets;
   } catch (error) {
-    console.error('사용자 지갑 조회 오류:', error);
+    console.error('사용자 모든 지갑 조회 오류:', error);
     console.error('조회하려던 사용자 ID:', userId);
-    throw new Error('사용자 지갑을 조회할 수 없습니다.');
+    throw new Error('사용자 모든 지갑을 조회할 수 없습니다.');
   }
 };
 

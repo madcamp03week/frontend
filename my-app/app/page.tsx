@@ -17,11 +17,20 @@ export default function Home() {
 
   // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
   useEffect(() => {
+    console.log('홈페이지 useEffect 실행:', { 
+      user: user ? '있음' : '없음', 
+      loading, 
+      dataLoaded, 
+      hasWallet,
+      walletsCount: wallets.length,
+      activeWallets: wallets.filter(w => w.isActive).length
+    });
+    
     if (user && !loading && dataLoaded && !hasWallet) {
       console.log('홈페이지: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
       router.push('/wallet-setup');
     }
-  }, [user, loading, dataLoaded, hasWallet, router]);
+  }, [user, loading, dataLoaded, hasWallet, router, wallets]);
 
   return (
     <main className="min-h-screen bg-[#1a1a1a] text-white font-sans overflow-hidden">

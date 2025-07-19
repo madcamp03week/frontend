@@ -515,7 +515,7 @@ export default function NewChronosPage() {
                         <span>새로운 주소 추가</span>
                       </button>
                       <p className="text-xs text-gray-400 mt-2">
-                        새로운 주소를 추가하면 입력된 주소들로 동일한 내용의 타입캡슐이 minting 됩니다. 각 소유자는 독립적으로 캡슐을 열 수 있습니다.
+                        새로운 주소를 추가하면 입력된 주소들로 동일한 내용의 타임캡슐이 minting 됩니다. 각 소유자는 독립적으로 캡슐을 열 수 있습니다.
                       </p>
                     </div>
                   </div>

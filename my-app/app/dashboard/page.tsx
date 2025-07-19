@@ -3,16 +3,56 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import WarningModal from '../../components/WarningModal';
+import PrivateKeyWarningModal from '../../components/PrivateKeyWarningModal';
+import PrivateKeyDisplayModal from '../../components/PrivateKeyDisplayModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+// 날짜를 안전하게 처리하는 함수
+const formatDate = (date: any): string => {
+  if (!date) return '날짜 없음';
+  
+  try {
+    // Firestore Timestamp인 경우
+    if (date && typeof date.toDate === 'function') {
+      return date.toDate().toLocaleDateString('ko-KR');
+    }
+    
+    // Date 객체인 경우
+    if (date instanceof Date) {
+      return date.toLocaleDateString('ko-KR');
+    }
+    
+    // 문자열인 경우 Date로 변환
+    if (typeof date === 'string') {
+      return new Date(date).toLocaleDateString('ko-KR');
+    }
+    
+    // 숫자 타임스탬프인 경우
+    if (typeof date === 'number') {
+      return new Date(date).toLocaleDateString('ko-KR');
+    }
+    
+    return '날짜 형식 오류';
+  } catch (error) {
+    console.error('날짜 변환 오류:', error, date);
+    return '날짜 변환 실패';
+  }
+};
 
 export default function DashboardPage() {
   const { user, userProfile, wallets, logout, hasWallet, loading: authLoading, dataLoaded, updateDisplayName } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showPrivateKeyWarningModal, setShowPrivateKeyWarningModal] = useState(false);
+  const [showPrivateKeyDisplayModal, setShowPrivateKeyDisplayModal] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<any>(null);
+  const [privateKeyData, setPrivateKeyData] = useState<any>(null);
+  const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nicknameLoading, setNicknameLoading] = useState(false);
+  const [showInactiveWallets, setShowInactiveWallets] = useState(false);
   const router = useRouter();
 
   // 사용자 프로필이 로드되면 닉네임 상태 초기화
@@ -72,6 +112,49 @@ export default function DashboardPage() {
   const handleNicknameCancel = () => {
     setNickname(userProfile?.displayName || '');
     setIsEditingNickname(false);
+  };
+
+  // Private Key 확인 처리
+  const handlePrivateKeyConfirm = async () => {
+    if (!selectedWallet || !user) return;
+    
+    setPrivateKeyLoading(true);
+    setShowPrivateKeyWarningModal(false);
+    
+    try {
+      // Firebase ID 토큰 가져오기
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch('/api/wallet/private-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          walletAddress: selectedWallet.address,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPrivateKeyData(data.data);
+        setShowPrivateKeyDisplayModal(true);
+      } else {
+        alert(data.error || 'Private Key 조회에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Private Key 조회 오류:', error);
+      alert('Private Key 조회 중 오류가 발생했습니다.');
+    } finally {
+      setPrivateKeyLoading(false);
+    }
+  };
+
+  const handlePrivateKeyRequest = (wallet: any) => {
+    setSelectedWallet(wallet);
+    setShowPrivateKeyWarningModal(true);
   };
 
   if (!user) {
@@ -193,7 +276,7 @@ export default function DashboardPage() {
                     <span className="text-gray-300 text-sm">프로필 생성일</span>
                   </div>
                   <p className="text-lg font-medium pl-5">
-                    {userProfile.createdAt.toLocaleDateString('ko-KR')}
+                    {userProfile.createdAt ? formatDate(userProfile.createdAt) : '알 수 없음'}
                   </p>
                 </div>
               )}
@@ -299,7 +382,7 @@ export default function DashboardPage() {
                 {/* 활성 지갑만 표시 */}
                 {wallets.filter(wallet => wallet.isActive).map((wallet, index) => (
                   <div 
-                    key={wallet.id} 
+                    key={wallet.id || wallet.address || index} 
                     className="group relative backdrop-blur-sm bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-6 hover:border-green-400/50 transition-all duration-500 hover:shadow-green-500/25 hover:shadow-lg transform hover:scale-[1.02]"
                   >
                     <div className="absolute top-4 right-4">
@@ -311,7 +394,7 @@ export default function DashboardPage() {
                     
                     <div className="mb-4">
                       <h3 className="text-xl font-bold text-green-400 mb-2">
-                        {wallet.label || `지갑 ${index + 1}`}
+                        {'활성 지갑'}
                       </h3>
                     </div>
                     
@@ -346,10 +429,10 @@ export default function DashboardPage() {
                           </svg>
                           생성일
                         </p>
-                        <p className="text-sm font-medium">{wallet.createdAt.toLocaleDateString('ko-KR')}</p>
+                        <p className="text-sm font-medium">{wallet.createdAt ? formatDate(wallet.createdAt) : '알 수 없음'}</p>
                       </div>
                       
-                      <div className="flex space-x-3 pt-2">
+                      <div className="flex justify-end space-x-3 pt-2">
                         <a
                           href={`https://polygonscan.com/address/${wallet.address}`}
                           target="_blank"
@@ -361,6 +444,15 @@ export default function DashboardPage() {
                           </svg>
                           Polygonscan 탐색
                         </a>
+                        <button
+                          onClick={() => handlePrivateKeyRequest(wallet)}
+                          className="group/private flex items-center px-4 py-2 bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 border border-red-500/30 hover:border-red-400/50 text-red-300 hover:text-red-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-red-500/25 transform hover:scale-105"
+                        >
+                          <svg className="w-4 h-4 mr-2 group-hover/private:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                          Private key 확인
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -369,17 +461,79 @@ export default function DashboardPage() {
                 {/* 비활성 지갑이 있는 경우 표시 */}
                 {wallets.filter(wallet => !wallet.isActive).length > 0 && (
                   <div className="backdrop-blur-sm bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6">
-                    <div className="flex items-center mb-3">
-                      <svg className="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.314 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      <span className="text-yellow-400 font-semibold text-lg">
-                        비활성 지갑 {wallets.filter(wallet => !wallet.isActive).length}개 감지됨
-                      </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <svg className="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.314 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <span className="text-yellow-400 font-semibold text-lg">
+                          비활성 지갑 {wallets.filter(wallet => !wallet.isActive).length}개 감지됨
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowInactiveWallets(!showInactiveWallets)}
+                        className="flex items-center px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 border border-yellow-500/30 hover:border-yellow-400/50 text-yellow-300 hover:text-yellow-200 text-sm rounded-lg transition-all duration-300"
+                      >
+                        <svg 
+                          className={`w-4 h-4 mr-1 transition-transform duration-300 ${showInactiveWallets ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        {showInactiveWallets ? '숨기기' : '보기'}
+                      </button>
                     </div>
-                    <p className="text-gray-300 leading-relaxed">
+                    
+                    {showInactiveWallets && (
+                      <div className="mt-4 space-y-3">
+                        {wallets.filter(wallet => !wallet.isActive).map((wallet, index) => (
+                          <div 
+                            key={wallet.id || wallet.address || index}
+                            className="group/address relative backdrop-blur-sm bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-500/30 rounded-xl p-4 hover:border-gray-400/50 transition-all duration-300"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="text-gray-400 text-sm mb-2 flex items-center">
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                  </svg>
+                                  비활성 지갑 {index + 1}
+                                </p>
+                                <div className="group/address relative">
+                                  <p className="font-mono text-sm break-all bg-black/30 p-3 rounded-lg border border-white/10 hover:border-gray-400/50 transition-all duration-300">
+                                    {wallet.address}
+                                  </p>
+                                  <button 
+                                    onClick={() => navigator.clipboard.writeText(wallet.address)}
+                                    className="absolute top-2 right-2 p-2 opacity-0 group-hover/address:opacity-100 transition-opacity duration-300 hover:bg-white/10 rounded-lg"
+                                    title="주소 복사"
+                                  >
+                                    <svg className="w-4 h-4 text-gray-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                  생성일: {wallet.createdAt ? formatDate(wallet.createdAt) : '알 수 없음'}
+                                </p>
+                              </div>
+                              <div className="ml-4">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-1"></div>
+                                  비활성
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p className="text-gray-300 leading-relaxed mt-4">
                       새로운 지갑을 발급하면 기존 타임캡슐에 대한 접근 권한이 완전히 소실됩니다. 
-                      이 작업은 되돌릴 수 없으니 신중히 고려해주세요.
+                      이 작업은 되돌릴 수 없습니다.
                     </p>
                   </div>
                 )}
@@ -510,8 +664,55 @@ export default function DashboardPage() {
         isOpen={showWarningModal}
         onClose={() => setShowWarningModal(false)}
         onConfirm={handleConfirmNewWallet}
+        title="주의사항"
+        message="새 지갑을 발급하면 기존의 타임캡슐들을 Chronos에서 조회할 수 없게 됩니다."
+        confirmText="지갑 생성으로 이동"
+        cancelText="취소"
+        details={
+          <p className="text-gray-400 text-xs">
+            • 기존 지갑으로 생성한 타임캡슐은 새 지갑에서 접근할 수 없습니다<br/>
+            • 타임캡슐 데이터는 기존 지갑 주소와 연결되어 있습니다<br/>
+            • 새 지갑 발급 후에는 기존 타임캡슐을 복구할 수 없습니다<br/>
+            • 지갑 설정 페이지에서 암호화 방법을 선택할 수 있습니다
+          </p>
+        }
         loading={loading}
       />
+      
+      {/* Private Key 경고 모달 */}
+      <PrivateKeyWarningModal
+        isOpen={showPrivateKeyWarningModal}
+        onClose={() => setShowPrivateKeyWarningModal(false)}
+        onConfirm={handlePrivateKeyConfirm}
+        title="Private Key 확인 경고"
+        message="Private key가 노출되면 지갑의 모든 타임캡슐을 잃을 수 있습니다."
+        confirmText="확인"
+        cancelText="취소"
+        details={
+          <p className="text-red-300 text-xs">
+            • Private key는 지갑의 모든 권한을 가집니다<br/>
+            • 노출된 Private key로 누구나 지갑에 접근할 수 있습니다<br/>
+            • 타임캡슐 데이터가 완전히 손실될 수 있습니다<br/>
+            • 이 작업은 되돌릴 수 없습니다
+          </p>
+        }
+        loading={privateKeyLoading}
+      />
+
+      {/* Private Key 표시 모달 */}
+      {privateKeyData && (
+        <PrivateKeyDisplayModal
+          isOpen={showPrivateKeyDisplayModal}
+          onClose={() => {
+            setShowPrivateKeyDisplayModal(false);
+            setPrivateKeyData(null);
+            setSelectedWallet(null);
+          }}
+          userMade={privateKeyData.userMade}
+          encryptedPrivateKey={privateKeyData.privateKey}
+          walletAddress={selectedWallet?.address || ''}
+        />
+      )}
     </div>
   );
 }

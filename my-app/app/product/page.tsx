@@ -13,7 +13,7 @@ export default function ProductPage() {
         <div className="text-2xl font-bold">
         <Link href="/">Chronos</Link>
         </div>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
+        <div className="space-x-8 text-sm text-gray-300 font-light"> 
           <Link href="/company">Company</Link>
           <Link href="/product">Product</Link>
           <Link href="/artist">Artist</Link>
@@ -29,7 +29,7 @@ export default function ProductPage() {
           transition={{ duration: 0.6 }}
           className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent"
         >
-          디지털 타임캡슐 DApp
+Digital Time Capsule DApp
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -37,7 +37,7 @@ export default function ProductPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-lg text-gray-400 max-w-3xl mx-auto"
         >
-          소중한 추억을 IPFS에 안전하게 저장하고, 미래의 정해진 시점에 NFT로 받아보세요.
+          소중한 추억을 IPFS에 안전하게 저장하고, 미래의 정해진 시점에 NFT로 받아보세요.<br></br>
           블록체인 기술로 보장되는 완전한 보안과 자동화된 스마트 컨트랙트 시스템을 경험하세요.
         </motion.p>
       </section>

@@ -67,7 +67,7 @@ export default function Home() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
               <div>
                 <h2 className="text-xl font-semibold text-blue-400">
-                  환영합니다, {user.email}님!
+                  환영합니다, {user.displayName}님!
                 </h2>
                 {wallets.filter(wallet => wallet.isActive).length > 0 && (
                   <p className="text-sm text-gray-400 mt-1">
@@ -246,6 +246,7 @@ export default function Home() {
         $0.00025
       </p>
       <p className="uppercase text-xs text-gray-400 mt-1">Average Cost per Transaction</p>
+      <br></br>
     </div>
   </motion.div>
 </section>

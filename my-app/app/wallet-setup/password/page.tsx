@@ -33,8 +33,10 @@ export default function WalletPasswordPage() {
       await createNewWalletWithPassword(password);
       console.log('비밀번호로 암호화된 지갑이 생성되었습니다.');
       
-      // 성공 시 메인 페이지로 이동
-      router.push('/');
+      // 성공 시 잠시 대기 후 메인 페이지로 이동 (상태 업데이트를 위해)
+      setTimeout(() => {
+        router.push('/');
+      }, 500);
     } catch (error) {
       console.error('지갑 생성 중 오류:', error);
       setError('지갑 생성 중 오류가 발생했습니다. 다시 시도해주세요.');

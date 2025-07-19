@@ -8,6 +8,38 @@ import PrivateKeyDisplayModal from '../../components/PrivateKeyDisplayModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+// 날짜를 안전하게 처리하는 함수
+const formatDate = (date: any): string => {
+  if (!date) return '날짜 없음';
+  
+  try {
+    // Firestore Timestamp인 경우
+    if (date && typeof date.toDate === 'function') {
+      return date.toDate().toLocaleDateString('ko-KR');
+    }
+    
+    // Date 객체인 경우
+    if (date instanceof Date) {
+      return date.toLocaleDateString('ko-KR');
+    }
+    
+    // 문자열인 경우 Date로 변환
+    if (typeof date === 'string') {
+      return new Date(date).toLocaleDateString('ko-KR');
+    }
+    
+    // 숫자 타임스탬프인 경우
+    if (typeof date === 'number') {
+      return new Date(date).toLocaleDateString('ko-KR');
+    }
+    
+    return '날짜 형식 오류';
+  } catch (error) {
+    console.error('날짜 변환 오류:', error, date);
+    return '날짜 변환 실패';
+  }
+};
+
 export default function DashboardPage() {
   const { user, userProfile, wallets, logout, hasWallet, loading: authLoading, dataLoaded, updateDisplayName } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -244,7 +276,7 @@ export default function DashboardPage() {
                     <span className="text-gray-300 text-sm">프로필 생성일</span>
                   </div>
                   <p className="text-lg font-medium pl-5">
-                    {userProfile.createdAt.toLocaleDateString('ko-KR')}
+                    {userProfile.createdAt ? formatDate(userProfile.createdAt) : '알 수 없음'}
                   </p>
                 </div>
               )}
@@ -350,7 +382,7 @@ export default function DashboardPage() {
                 {/* 활성 지갑만 표시 */}
                 {wallets.filter(wallet => wallet.isActive).map((wallet, index) => (
                   <div 
-                    key={wallet.id} 
+                    key={wallet.id || wallet.address || index} 
                     className="group relative backdrop-blur-sm bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-6 hover:border-green-400/50 transition-all duration-500 hover:shadow-green-500/25 hover:shadow-lg transform hover:scale-[1.02]"
                   >
                     <div className="absolute top-4 right-4">
@@ -397,7 +429,7 @@ export default function DashboardPage() {
                           </svg>
                           생성일
                         </p>
-                        <p className="text-sm font-medium">{wallet.createdAt.toLocaleDateString('ko-KR')}</p>
+                        <p className="text-sm font-medium">{wallet.createdAt ? formatDate(wallet.createdAt) : '알 수 없음'}</p>
                       </div>
                       
                       <div className="flex justify-end space-x-3 pt-2">
@@ -458,7 +490,7 @@ export default function DashboardPage() {
                       <div className="mt-4 space-y-3">
                         {wallets.filter(wallet => !wallet.isActive).map((wallet, index) => (
                           <div 
-                            key={wallet.id}
+                            key={wallet.id || wallet.address || index}
                             className="group/address relative backdrop-blur-sm bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-500/30 rounded-xl p-4 hover:border-gray-400/50 transition-all duration-300"
                           >
                             <div className="flex items-center justify-between">
@@ -484,7 +516,7 @@ export default function DashboardPage() {
                                   </button>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">
-                                  생성일: {wallet.createdAt.toLocaleDateString('ko-KR')}
+                                  생성일: {wallet.createdAt ? formatDate(wallet.createdAt) : '알 수 없음'}
                                 </p>
                               </div>
                               <div className="ml-4">

@@ -139,7 +139,7 @@ export default function MyChronosPage() {
               </thead>
               <tbody>
                 {chronosList.map((chronos, index) => (
-                  <tr key={chronos.id} className="border-b border-gray-700 hover:bg-gray-800 transition-colors">
+                  <tr key={chronos.id || index} className="border-b border-gray-700 hover:bg-gray-800 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-300">
                       {index + 1}
                     </td>

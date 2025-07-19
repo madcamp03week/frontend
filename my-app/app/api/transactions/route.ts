@@ -17,6 +17,7 @@ interface Transaction {
   input: string;
   status: 'success' | 'failed';
   timestamp: number;
+  relativeTime: string;
   methodName?: string;
   contractAddress?: string;
   tokenId?: string;
@@ -70,7 +71,28 @@ async function getPolygonNFTTransactions(address: string) {
   return data.result;
 }
 
-
+// 시간을 상대적 표기로 변환하는 함수
+function getRelativeTime(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+  
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365));
+  
+  if (years > 0) {
+    return `${years}년 전`;
+  } else if (days > 0) {
+    return `${days}일 전`;
+  } else if (hours > 0) {
+    return `${hours}시간 전`;
+  } else if (minutes > 0) {
+    return `${minutes}분 전`;
+  } else {
+    return '방금 전';
+  }
+}
 
 // 사용자의 트랜잭션 조회 API
 export async function GET(request: NextRequest) {
@@ -167,6 +189,19 @@ export async function GET(request: NextRequest) {
           
           // NFT 트랜잭션 데이터 변환
           for (const tx of transactions) {
+            // 메서드 이름 결정
+            let methodName = 'NFT Transfer';
+            
+            if (tx.from === '0x0000000000000000000000000000000000000000') {
+              methodName = 'Chronos 생성';
+            } else if (tx.from.toLowerCase() === walletAddress.toLowerCase()) {
+              methodName = 'Chronos 보냄';
+            } else {
+              methodName = 'Chronos 받음';
+            }
+            
+            const timestamp = parseInt(tx.timeStamp) * 1000; // Unix timestamp를 milliseconds로 변환
+            
             const transaction: Transaction = {
               hash: tx.hash,
               from: tx.from,
@@ -180,15 +215,16 @@ export async function GET(request: NextRequest) {
               transactionIndex: tx.transactionIndex,
               input: tx.input || '0x',
               status: 'success', // Etherscan API는 성공한 트랜잭션만 반환
-              timestamp: parseInt(tx.timeStamp) * 1000, // Unix timestamp를 milliseconds로 변환
-              methodName: 'NFT Transfer',
+              timestamp: timestamp,
+              relativeTime: getRelativeTime(timestamp),
+              methodName: methodName,
               contractAddress: tx.contractAddress,
               tokenId: tx.tokenID,
               tokenName: tx.tokenName,
               tokenSymbol: tx.tokenSymbol,
             };
             
-            console.log(`  🎨 NFT: ${tx.tokenName} #${tx.tokenID} (${tx.contractAddress})`);
+            console.log(`  🎨 ${methodName}: ${tx.tokenName} #${tx.tokenID} (${tx.contractAddress})`);
             allTransactions.push(transaction);
           }
         } else {

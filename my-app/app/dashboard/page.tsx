@@ -177,6 +177,8 @@ export default function DashboardPage() {
       // Firebase ID 토큰 가져오기
       const idToken = await user.getIdToken();
       
+      console.log('🔍 트랜잭션 API 호출 시작...');
+      
       const response = await fetch('/api/transactions?limit=20', {
         method: 'GET',
         headers: {
@@ -186,8 +188,18 @@ export default function DashboardPage() {
       });
 
       const data = await response.json();
+      
+      console.log('📊 트랜잭션 API 응답:', {
+        status: response.status,
+        ok: response.ok,
+        data: data
+      });
 
       if (response.ok) {
+        console.log('✅ 트랜잭션 데이터 설정:', {
+          transactionsCount: data.data?.length || 0,
+          stats: data.stats
+        });
         setTransactions(data.data || []);
         setTransactionStats(data.stats || {
           total: 0,
@@ -199,10 +211,10 @@ export default function DashboardPage() {
           contractInteractions: 0,
         });
       } else {
-        console.error('트랜잭션 조회 실패:', data.error);
+        console.error('❌ 트랜잭션 조회 실패:', data.error);
       }
     } catch (error) {
-      console.error('트랜잭션 조회 오류:', error);
+      console.error('❌ 트랜잭션 조회 오류:', error);
     } finally {
       setTransactionsLoading(false);
     }
@@ -210,10 +222,21 @@ export default function DashboardPage() {
 
   // 컴포넌트 마운트 시 트랜잭션 데이터 가져오기
   useEffect(() => {
+    console.log('🔄 useEffect 실행:', { user: !!user, hasWallet, dataLoaded });
     if (user && hasWallet) {
+      console.log('🚀 트랜잭션 데이터 가져오기 시작');
       fetchTransactions();
     }
   }, [user, hasWallet]);
+
+  // 트랜잭션 상태 디버깅
+  useEffect(() => {
+    console.log('📈 트랜잭션 상태 업데이트:', {
+      transactionsCount: transactions.length,
+      transactionsLoading,
+      transactionStats
+    });
+  }, [transactions, transactionsLoading, transactionStats]);
 
   if (!user) {
     return (
@@ -772,23 +795,32 @@ export default function DashboardPage() {
             </div>
             
                          {/* 트랜잭션 통계 카드 */}
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                <div className="group backdrop-blur-sm bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/30 rounded-2xl p-6 hover:border-blue-400/50 transition-all duration-300 hover:shadow-blue-500/25 transform hover:scale-105">
                  <div className="flex items-center mb-4">
                    <div className="w-3 h-3 bg-blue-400 rounded-full mr-3 animate-pulse"></div>
-                   <p className="text-gray-300 text-sm font-medium">총 트랜잭션</p>
+                   <p className="text-gray-300 text-sm font-medium">총 Chronos</p>
                  </div>
                  <p className="text-2xl font-bold text-blue-300">{transactionStats.total}</p>
-                 <p className="text-xs text-gray-400 mt-2">전체 블록체인 활동</p>
+                 <p className="text-xs text-gray-400 mt-2">전체 NFT 활동</p>
                </div>
                
-               <div className="group backdrop-blur-sm bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-6 hover:border-green-400/50 transition-all duration-300 hover:shadow-green-500/25 transform hover:scale-105">
+               <div className="group backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all duration-300 hover:shadow-purple-500/25 transform hover:scale-105">
                  <div className="flex items-center mb-4">
-                   <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
-                   <p className="text-gray-300 text-sm font-medium">성공</p>
+                   <div className="w-3 h-3 bg-purple-400 rounded-full mr-3 animate-pulse"></div>
+                   <p className="text-gray-300 text-sm font-medium">생성</p>
                  </div>
-                 <p className="text-2xl font-bold text-green-300">{transactionStats.success}</p>
-                 <p className="text-xs text-gray-400 mt-2">성공한 트랜잭션</p>
+                 <p className="text-2xl font-bold text-purple-300">{transactions.filter(tx => tx.methodName === 'Chronos 생성').length}</p>
+                 <p className="text-xs text-gray-400 mt-2">생성한 Chronos</p>
+               </div>
+               
+               <div className="group backdrop-blur-sm bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-6 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-cyan-500/25 transform hover:scale-105">
+                 <div className="flex items-center mb-4">
+                   <div className="w-3 h-3 bg-cyan-400 rounded-full mr-3 animate-pulse"></div>
+                   <p className="text-gray-300 text-sm font-medium">전송</p>
+                 </div>
+                 <p className="text-2xl font-bold text-cyan-300">{transactions.filter(tx => tx.methodName === 'Chronos 보냄' || tx.methodName === 'Chronos 받음').length}</p>
+                 <p className="text-xs text-gray-400 mt-2">전송/수신 활동</p>
                </div>
                
                <div className="group backdrop-blur-sm bg-gradient-to-br from-red-500/10 to-pink-500/10 border border-red-500/30 rounded-2xl p-6 hover:border-red-400/50 transition-all duration-300 hover:shadow-red-500/25 transform hover:scale-105">
@@ -853,17 +885,29 @@ export default function DashboardPage() {
                        <div className="flex items-center justify-between">
                          <div className="flex items-center space-x-4">
                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                             tx.status === 'success' 
-                               ? 'bg-green-500/20' 
-                               : 'bg-red-500/20'
+                             tx.methodName === 'Chronos 생성' 
+                               ? 'bg-purple-500/50'
+                               : tx.methodName === 'Chronos 보냄'
+                               ? 'bg-cyan-500/50'
+                               : tx.methodName === 'Chronos 받음'
+                               ? 'bg-cyan-500/50'
+                               : 'bg-gray-500/20'
                            }`}>
-                             {tx.status === 'success' ? (
-                               <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             {tx.methodName === 'Chronos 생성' ? (
+                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                               </svg>
+                             ) : tx.methodName === 'Chronos 보냄' ? (
+                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                               </svg>
+                             ) : tx.methodName === 'Chronos 받음' ? (
+                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                </svg>
                              ) : (
-                               <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                </svg>
                              )}
                            </div>
@@ -871,14 +915,14 @@ export default function DashboardPage() {
                              <p className={`font-semibold ${
                                tx.status === 'success' ? 'text-green-300' : 'text-red-300'
                              }`}>
-                               {tx.methodName || 'Transfer'}
+                               {tx.methodName || 'NFT Transfer'}
                              </p>
                              <p className="text-sm text-gray-400">
-                               {new Date(tx.timestamp).toLocaleString('ko-KR')}
+                               {tx.relativeTime || new Date(tx.timestamp).toLocaleString('ko-KR')}
                              </p>
-                             {tx.tokenName && (
+                             {tx.tokenName && tx.tokenId && (
                                <p className="text-xs text-gray-500">
-                                 {tx.tokenName} {tx.tokenSymbol && `(${tx.tokenSymbol})`}
+                                 {tx.tokenName} #{tx.tokenId} {tx.tokenSymbol && `(${tx.tokenSymbol})`}
                                </p>
                              )}
                            </div>

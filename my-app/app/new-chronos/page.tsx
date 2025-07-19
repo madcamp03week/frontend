@@ -28,8 +28,10 @@ export default function NewChronosPage() {
     e.preventDefault();
     
     try {
-      // 사용자의 지갑 주소들 추출
-      const userWalletAddresses = wallets.map(wallet => wallet.address);
+      // 사용자의 활성 지갑 주소들만 추출
+      const userWalletAddresses = wallets
+        .filter(wallet => wallet.isActive)
+        .map(wallet => wallet.address);
       
       // 타임캡슐 데이터 준비
       const chronosData = {

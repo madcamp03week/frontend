@@ -10,7 +10,7 @@ export default function WalletPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { createNewWallet } = useAuth();
+  const { createNewWalletWithPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +29,8 @@ export default function WalletPasswordPage() {
     setError('');
     
     try {
-      // TODO: 비밀번호로 암호화하는 지갑 생성 로직 구현
-      // 현재는 기본 지갑 생성 함수를 사용하지만, 
-      // 나중에 비밀번호로 암호화하는 별도 함수로 변경 필요
-      await createNewWallet();
+      // 비밀번호로 암호화하는 지갑 생성
+      await createNewWalletWithPassword(password);
       console.log('비밀번호로 암호화된 지갑이 생성되었습니다.');
       
       // 성공 시 홈페이지로 이동

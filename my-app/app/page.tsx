@@ -36,9 +36,9 @@ export default function Home() {
     <main className="min-h-screen bg-[#1a1a1a] text-white font-sans overflow-hidden">
       {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
-        <div className="text-2xl font-bold">
+       <Link href="/"><div className="text-2xl font-bold">
          Chronos
-        </div>
+        </div></Link>
         <div className="space-x-8 text-sm text-gray-300 font-light">
           <Link href="/company">Company</Link>
           <Link href="/product">Product</Link>

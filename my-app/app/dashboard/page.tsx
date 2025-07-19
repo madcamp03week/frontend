@@ -272,11 +272,9 @@ export default function DashboardPage() {
       
       {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
-        <Link href="/" className="text-2xl font-bold text-white">
-        <div className="text-2xl font-bold">
+      <Link href="/"><div className="text-2xl font-bold">
          Chronos
-        </div>
-        </Link>
+        </div></Link>
         <div className="space-x-8 text-sm text-gray-300 font-light">
           <Link href="/company">Company</Link>
           <Link href="/product">Product</Link>

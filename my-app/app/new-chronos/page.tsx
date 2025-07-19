@@ -123,9 +123,11 @@ export default function NewChronosPage() {
       )}
       {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
+        <Link href="/" className="text-2xl font-bold text-white">
         <div className="text-2xl font-bold">
          Chronos
         </div>
+        </Link>
         <div className="space-x-8 text-sm text-gray-300 font-light">
           <Link href="/company">Company</Link>
           <Link href="/product">Product</Link>
@@ -148,7 +150,7 @@ export default function NewChronosPage() {
           )}
         </div>
       </nav>
-
+      
       {/* 메인 컨텐츠 */}
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-8">

@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 사용자 프로필 규칙
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 지갑 정보 규칙
+    match /wallets/{walletId} {
+      // 읽기: 본인의 지갑만 읽기 가능
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      
+      // 쓰기: 본인의 지갑만 수정 가능
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      
+      // 생성: 본인의 지갑만 생성 가능
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId &&
+        // 암호화된 Private Key가 있는 경우 유효성 검사
+        (request.resource.data.encryptedPrivateKey == null || 
+         request.resource.data.encryptedPrivateKey is string);
+    }
+  }
+} 

@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -18,11 +19,13 @@ const firebaseConfig = {
 // Initialize Firebase
 let app;
 let auth: Auth;
+let firestore: Firestore;
 let analytics;
 
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
+  firestore = getFirestore(app);
   
   // Initialize Analytics (only in browser environment)
   if (typeof window !== 'undefined') {
@@ -33,7 +36,8 @@ try {
   // Fallback: 기본 설정으로 재시도
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
+  firestore = getFirestore(app);
 }
 
-export { auth, analytics };
+export { auth, firestore, analytics };
 export default app; 

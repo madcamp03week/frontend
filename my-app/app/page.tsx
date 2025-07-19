@@ -6,13 +6,15 @@ import SubscribeFooter from './components/SubscribeFooter';
 import CompanyPage from './company/page';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
+import { useState } from 'react';
 
 
 export default function Home() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, userProfile, wallets } = useAuth();
+  const [showUserInfo, setShowUserInfo] = useState(true);
 
   return (
-    <main className="min-h-screen bg-black text-white font-sans overflow-hidden">
+    <main className="min-h-screen bg-[#1a1a1a] text-white font-sans overflow-hidden">
       {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
         <div className="text-2xl font-bold">
@@ -40,6 +42,88 @@ export default function Home() {
           )}
         </div>
       </nav>
+
+      {/* 로그인한 사용자 정보 섹션 */}
+      {user && showUserInfo && (
+        <motion.section
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.5 }}
+          className="px-10 py-6 bg-[#1a1a1a]/50 backdrop-blur-sm border-b border-gray-800 relative"
+        >
+          {/* 닫기 버튼 */}
+          <button
+            onClick={() => setShowUserInfo(false)}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            aria-label="사용자 정보 섹션 닫기"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+              <div>
+                <h2 className="text-xl font-semibold text-blue-400">
+                  환영합니다, {user.email}님!
+                </h2>
+                {wallets.filter(wallet => wallet.isActive).length > 0 && (
+                  <p className="text-sm text-gray-400 mt-1">
+                    폴리곤 지갑: 활성 {wallets.filter(wallet => wallet.isActive).length}개
+                    {wallets.filter(wallet => wallet.isActive)[0] && (
+                      <span className="ml-2">
+                        (주 지갑: {wallets.filter(wallet => wallet.isActive)[0].address.slice(0, 6)}...{wallets.filter(wallet => wallet.isActive)[0].address.slice(-4)})
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+              <div className="flex space-x-4">
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm transition-colors"
+                >
+                  대시보드 보기
+                </Link>
+                {wallets.filter(wallet => wallet.isActive).length > 0 && (
+                  <a
+                    href={`https://polygonscan.com/address/${wallets.filter(wallet => wallet.isActive)[0].address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-sm transition-colors"
+                  >
+                    지갑 확인
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+      {/* 사용자 정보가 숨겨졌을 때 다시 보이게 하는 버튼 */}
+      {user && !showUserInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="px-10 py-2 bg-[#1a1a1a]/30 backdrop-blur-sm border-b border-gray-800"
+        >
+          <div className="max-w-6xl mx-auto flex justify-center">
+            <button
+              onClick={() => setShowUserInfo(true)}
+              className="text-sm text-gray-400 hover:text-white transition-colors flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              <span>사용자 정보 보기</span>
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* 메인 텍스트 */}
       <section className="flex flex-col items-center justify-center mt-28 px-4 text-center">

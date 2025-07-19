@@ -42,7 +42,10 @@ export default function BlockchainTestPage() {
         name: '블록체인 테스트 타임캡슐',
         description: '블록체인에 저장되는 타임캡슐입니다.',
         openDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일 후
-        isPublic: false
+        recipients: [
+          '0x38d41fd88833e17970128e91684cC9A0ec47D905',
+          '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
+        ]
       };
 
       const result = await createTimeCapsuleOnChain(testData);
@@ -123,7 +126,10 @@ export default function BlockchainTestPage() {
         name: '전체 플로우 테스트',
         description: 'DB + 블록체인 연동 테스트',
         openDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        isPublic: true
+        recipients: [
+          '0x38d41fd88833e17970128e91684cC9A0ec47D905',
+          '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
+        ]
       });
 
       setTestResult(safeStringify({

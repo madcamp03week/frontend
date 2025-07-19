@@ -81,6 +81,40 @@ export default function ApiTestPage() {
     }
   };
 
+  const testCreateBlockchainCapsule = async () => {
+    setLoading(true);
+    try {
+      const testData = {
+        name: '블록체인 타임캡슐 테스트',
+        description: '블록체인 API 테스트용 타임캡슐입니다.',
+        openDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7일 후
+        recipients: [
+          '0x38d41fd88833e17970128e91684cC9A0ec47D905',
+          '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
+        ]
+      };
+
+      console.log('전송할 데이터:', JSON.stringify(testData, null, 2));
+
+      const response = await fetch('/api/blockchain/create-capsule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData),
+      });
+
+      const result = await response.json();
+      console.log('API 응답:', result);
+      setTestResult(JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error('에러:', error);
+      setTestResult(`오류: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <h1 className="text-3xl font-bold mb-8">API 테스트 페이지</h1>
@@ -105,9 +139,17 @@ export default function ApiTestPage() {
         <button
           onClick={testGetSpecificChronos}
           disabled={loading}
-          className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 rounded-lg"
+          className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 rounded-lg mr-4"
         >
           {loading ? '테스트 중...' : '특정 타임캡슐 조회 테스트'}
+        </button>
+        
+        <button
+          onClick={testCreateBlockchainCapsule}
+          disabled={loading}
+          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg"
+        >
+          {loading ? '테스트 중...' : '블록체인 타임캡슐 생성 테스트'}
         </button>
       </div>
 

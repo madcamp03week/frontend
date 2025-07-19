@@ -17,15 +17,24 @@ export const createTimeCapsuleOnChain = async (chronosData: {
   name: string;
   description: string;
   openDate: Date | null;
-  isPublic: boolean;
+  recipients?: string[];
 }) => {
   try {
+    // recipients가 없으면 기본값 설정
+    const dataToSend = {
+      ...chronosData,
+      recipients: chronosData.recipients || [
+        '0x38d41fd88833e17970128e91684cC9A0ec47D905',
+        '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
+      ]
+    };
+
     const response = await fetch('/api/blockchain/create-capsule', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(chronosData),
+      body: JSON.stringify(dataToSend),
     });
 
     const result = await response.json();

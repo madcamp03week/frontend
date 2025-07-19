@@ -27,7 +27,6 @@ async function uploadIPFSMetadata(chronosData: {
   name: string;
   description: string;
   openDate: Date | null;
-  isPublic: boolean;
 }): Promise<{
   unopenedIpfsMetadataCid: string | null;
   openedIpfsMetadataCid: string | null;
@@ -44,14 +43,6 @@ async function uploadIPFSMetadata(chronosData: {
         { 
           trait_type: "Open Date", 
           value: chronosData.openDate ? chronosData.openDate.toISOString() : "Never" 
-        },
-        { 
-          trait_type: "Status", 
-          value: "Unopened" 
-        },
-        { 
-          trait_type: "Public", 
-          value: chronosData.isPublic ? "Yes" : "No" 
         }
       ],
       properties: {
@@ -68,14 +59,6 @@ async function uploadIPFSMetadata(chronosData: {
         { 
           trait_type: "Open Date", 
           value: chronosData.openDate ? chronosData.openDate.toISOString() : "Never" 
-        },
-        { 
-          trait_type: "Status", 
-          value: "Opened" 
-        },
-        { 
-          trait_type: "Public", 
-          value: chronosData.isPublic ? "Yes" : "No" 
         }
       ],
       properties: {
@@ -144,7 +127,31 @@ async function uploadIPFSMetadata(chronosData: {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, openDate, isPublic } = body;
+    console.log('받은 요청 데이터:', JSON.stringify(body, null, 2));
+    
+    const { name, description, openDate, recipients } = body;
+    console.log('추출된 recipients:', recipients);
+    console.log('recipients 타입:', typeof recipients);
+    console.log('recipients가 배열인가?', Array.isArray(recipients));
+
+    // recipients 검증
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+      console.log('recipients 검증 실패:', { recipients, isArray: Array.isArray(recipients), length: recipients?.length });
+      return NextResponse.json({
+        success: false,
+        error: 'recipients 배열이 필요하며 비어있을 수 없습니다.'
+      }, { status: 400 });
+    }
+
+    // 각 recipient가 유효한 이더리움 주소인지 검증
+    for (const recipient of recipients) {
+      if (!ethers.isAddress(recipient)) {
+        return NextResponse.json({
+          success: false,
+          error: `유효하지 않은 이더리움 주소입니다: ${recipient}`
+        }, { status: 400 });
+      }
+    }
 
     if (!PRIVATE_KEY) {
       return NextResponse.json({
@@ -166,8 +173,7 @@ export async function POST(request: NextRequest) {
       ipfsResult = await uploadIPFSMetadata({
         name,
         description,
-        openDate: openDate ? new Date(openDate) : null,
-        isPublic
+        openDate: openDate ? new Date(openDate) : null
       });
       console.log('IPFS 메타데이터 업로드 성공:', ipfsResult);
     } catch (ipfsError) {
@@ -198,12 +204,12 @@ export async function POST(request: NextRequest) {
 
     // 스마트컨트랙트 함수 호출 (IPFS CID 포함)
     const tx = await contract.createCapsule(
-      [serviceWallet.address], // recipients (현재는 서비스 지갑만)
+      recipients, // 요청에서 받은 recipients 배열
       name,
       description,
       openDateTimestamp,
-      ipfsResult.unopenedIpfsMetadataCid || '',
-      ipfsResult.openedIpfsMetadataCid || ''
+      ipfsResult.unopenedIpfsMetadataCid ? `ipfs://${ipfsResult.unopenedIpfsMetadataCid}` : '',
+      ipfsResult.openedIpfsMetadataCid ? `ipfs://${ipfsResult.openedIpfsMetadataCid}` : ''
     );
 
     // 트랜잭션 완료 대기

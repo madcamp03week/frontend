@@ -98,14 +98,23 @@ export async function GET(request: NextRequest) {
 
     const data: OpenSeaV2Response = await response.json();
     console.log('📦 OpenSea v2 응답 데이터 개수:', data.nfts?.length || 0);
+    
+    // Raw 응답 데이터 출력
+    console.log('🔍 OpenSea v2 Raw 응답 데이터:');
+    console.log(JSON.stringify(data, null, 2));
+    
+    // 첫 번째 NFT의 상세 구조도 출력
+    if (data.nfts && data.nfts.length > 0) {
+      console.log('📋 첫 번째 NFT 상세 구조:');
+      console.log(JSON.stringify(data.nfts[0], null, 2));
+    }
 
-    // TimeCapsule NFT 필터링 (컨트랙트 주소나 컬렉션 이름으로 필터링)
-    // 실제 TimeCapsule 컨트랙트 주소로 변경해야 합니다
+    // TimeCapsule NFT 필터링 (실제 컨트랙트 주소 사용)
+    const TIMECAPSULE_CONTRACT_ADDRESS = '0xb39b584c68f3daf59b4028f6b593dad3350ddaaf';
+    
     const timeCapsuleAssets = data.nfts?.filter(nft => 
-      nft.name?.toLowerCase().includes('timecapsule') ||
-      nft.name?.toLowerCase().includes('chronos') ||
-      nft.collection?.toLowerCase().includes('timecapsule') ||
-      nft.collection?.toLowerCase().includes('chronos')
+      nft.contract?.toLowerCase() === TIMECAPSULE_CONTRACT_ADDRESS.toLowerCase() ||
+      nft.collection?.toLowerCase() === TIMECAPSULE_CONTRACT_ADDRESS.toLowerCase()
     ) || [];
 
     console.log('⏰ TimeCapsule NFT 개수:', timeCapsuleAssets.length);

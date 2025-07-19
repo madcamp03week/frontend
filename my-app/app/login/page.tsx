@@ -9,6 +9,7 @@ import {
 import { auth } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 
 export default function LoginPage() {
@@ -18,7 +19,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup } = useAuth();
+  const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup, user, hasWallet, loading: authLoading } = useAuth();
+
+  // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
+  useEffect(() => {
+    if (user && !authLoading && !hasWallet) {
+      console.log('로그인 페이지: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
+      router.push('/wallet-setup');
+    }
+  }, [user, authLoading, hasWallet, router]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();

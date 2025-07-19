@@ -21,6 +21,7 @@ interface AuthContextType {
   wallets: WalletData[];
   shouldRedirectToWalletSetup: boolean;
   setShouldRedirectToWalletSetup: (value: boolean) => void;
+  hasWallet: boolean;
   logout: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
   wallets: [],
   shouldRedirectToWalletSetup: false,
   setShouldRedirectToWalletSetup: () => {},
+  hasWallet: false,
   logout: async () => {},
   signUp: async () => {},
   signIn: async () => {},
@@ -56,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wallets, setWallets] = useState<WalletData[]>([]);
   const [shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup] = useState(false);
+  
+  // 지갑 보유 여부 계산
+  const hasWallet = wallets.some(wallet => wallet.isActive);
 
   // OAuth 사용자를 위한 지갑 생성 함수
   const createWalletForOAuthUser = async (userId: string) => {
@@ -343,6 +348,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     wallets,
     shouldRedirectToWalletSetup,
     setShouldRedirectToWalletSetup,
+    hasWallet,
     logout,
     signUp,
     signIn,

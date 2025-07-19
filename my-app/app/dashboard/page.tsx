@@ -1,16 +1,24 @@
 'use client';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import WarningModal from '../../components/WarningModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { user, userProfile, wallets, logout } = useAuth();
+  const { user, userProfile, wallets, logout, hasWallet, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const router = useRouter();
+
+  // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
+  useEffect(() => {
+    if (user && !authLoading && !hasWallet) {
+      console.log('사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
+      router.push('/wallet-setup');
+    }
+  }, [user, authLoading, hasWallet, router]);
 
   const handleCreateNewWallet = async () => {
     if (!user) return;

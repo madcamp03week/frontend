@@ -22,6 +22,7 @@ interface AuthContextType {
   shouldRedirectToWalletSetup: boolean;
   setShouldRedirectToWalletSetup: (value: boolean) => void;
   hasWallet: boolean;
+  dataLoaded: boolean;
   logout: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -37,6 +38,7 @@ const AuthContext = createContext<AuthContextType>({
   shouldRedirectToWalletSetup: false,
   setShouldRedirectToWalletSetup: () => {},
   hasWallet: false,
+  dataLoaded: false,
   logout: async () => {},
   signUp: async () => {},
   signIn: async () => {},
@@ -58,9 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wallets, setWallets] = useState<WalletData[]>([]);
   const [shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // 데이터 로드 완료 상태 추가
   
-  // 지갑 보유 여부 계산
-  const hasWallet = wallets.some(wallet => wallet.isActive);
+  // 지갑 보유 여부 계산 (데이터가 로드된 후에만 계산)
+  const hasWallet = dataLoaded ? wallets.some(wallet => wallet.isActive) : false;
+  console.log('지갑 보유 여부 계산:', { 
+    walletsCount: wallets.length, 
+    activeWallets: wallets.filter(w => w.isActive).length, 
+    hasWallet,
+    dataLoaded 
+  });
 
   // OAuth 사용자를 위한 지갑 생성 함수
   const createWalletForOAuthUser = async (userId: string) => {
@@ -107,8 +116,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // 사용자가 로그인되어 있으면 Firestore에서 데이터 로드
       if (user) {
+        console.log('사용자 로그인 감지:', user.uid, user.email);
+        setDataLoaded(false); // 새로운 사용자 로그인 시 데이터 로드 상태 초기화
         try {
           const { user: profile, wallets: userWallets } = await getUserWithWallets(user.uid);
+          console.log('Firestore에서 로드된 데이터:', { 
+            profile: profile ? '있음' : '없음', 
+            walletsCount: userWallets.length,
+            wallets: userWallets.map(w => ({ id: w.id, address: w.address, isActive: w.isActive }))
+          });
           if (profile) {
             setUserProfile({
               ...profile,
@@ -183,9 +199,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUserProfile(null);
         setWallets([]);
+        setDataLoaded(true); // 로그아웃 상태에서도 데이터 로드 완료 표시
       }
       
       setLoading(false);
+      if (user) {
+        setDataLoaded(true); // 로그인된 사용자의 경우에만 데이터 로드 완료 표시
+      }
     });
 
     return () => unsubscribe();
@@ -349,6 +369,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     shouldRedirectToWalletSetup,
     setShouldRedirectToWalletSetup,
     hasWallet,
+    dataLoaded,
     logout,
     signUp,
     signIn,

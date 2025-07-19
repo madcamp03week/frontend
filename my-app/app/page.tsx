@@ -131,11 +131,38 @@ export default function Home() {
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
           FINANCIAL EXPLORATION
         </h1>
+        <Link
+          href="/new-chronos"
+          className="mt-8 inline-block px-8 py-3 rounded-full font-semibold text-lg transition-all shadow
+            bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500
+            hover:from-cyan-300 hover:via-blue-400 hover:to-purple-400
+            text-white relative overflow-hidden
+            ring-2 ring-cyan-400/30 hover:ring-purple-400/40
+            before:absolute before:inset-0 before:bg-white/10 before:blur before:opacity-0 hover:before:opacity-100
+            animate-neon-glow"
+          style={{
+            boxShadow: '0 0 16px 2px #00fff0, 0 0 32px 4px #8f00ff44'
+          }}
+        >
+          <span className="relative z-10 tracking-wide flex items-center">
+        
+            Chrons 만들러 가기
+          </span>
+        </Link>
+        <style jsx>{`
+          .animate-neon-glow {
+            animation: neonGlow 2.5s infinite alternate;
+          }
+          @keyframes neonGlow {
+            0% { box-shadow: 0 0 8px #00fff0, 0 0 16px #8f00ff; }
+            100% { box-shadow: 0 0 24px #00fff0, 0 0 48px #8f00ff; }
+          }
+        `}</style>
       </section>
       
 
 {/* 체인 이미지 애니메이션 */}
-      <section className="mt-24 relative h-[500px] w-full flex items-center justify-center">
+      <section className="mt-24 relative h-[300px] w-full flex items-center justify-center">
   {/* 왼쪽 체인 */}
   <motion.img
     src="/asset/c2.png"

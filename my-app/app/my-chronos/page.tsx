@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 
 
 export default function MyChronosPage() {
-  const { user, wallets, logout } = useAuth();
+  const { user, wallets } = useAuth();
   const [chronosList, setChronosList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -56,6 +56,9 @@ export default function MyChronosPage() {
   // 활성 지갑 주소
   const activeWallet = wallets.find(wallet => wallet.isActive);
   const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
+
+  const { userProfile, logout, createNewWallet } = useAuth();
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   
 

@@ -1,11 +1,15 @@
 import { ethers } from 'ethers';
 
 // 암호화 키 (실제 프로덕션에서는 환경변수로 관리해야 함)
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'your-secure-encryption-key-32-chars';
+const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
 
 // Private Key 암호화 (시스템 키만 사용)
 export const encryptPrivateKey = (privateKey: string): string => {
   try {
+    if (!ENCRYPTION_KEY) {
+      throw new Error('암호화 키가 설정되지 않았습니다.');
+    }
+    
     // 시스템 암호화 키를 32바이트로 변환
     const keyBytes = ethers.toUtf8Bytes(ENCRYPTION_KEY.slice(0, 32));
     
@@ -28,6 +32,10 @@ export const encryptPrivateKey = (privateKey: string): string => {
 // Private Key 복호화 (시스템 키만 사용)
 export const decryptPrivateKey = (encryptedPrivateKey: string): string => {
   try {
+    if (!ENCRYPTION_KEY) {
+      throw new Error('암호화 키가 설정되지 않았습니다.');
+    }
+    
     // 시스템 암호화 키를 32바이트로 변환
     const keyBytes = ethers.toUtf8Bytes(ENCRYPTION_KEY.slice(0, 32));
     
@@ -62,5 +70,5 @@ export const recoverWalletFromEncryptedKey = (
 
 // 암호화 키 유효성 검사
 export const validateEncryptionKey = (): boolean => {
-  return ENCRYPTION_KEY.length >= 32;
+  return ENCRYPTION_KEY ? ENCRYPTION_KEY.length >= 32 : false;
 }; 

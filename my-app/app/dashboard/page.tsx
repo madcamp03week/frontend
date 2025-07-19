@@ -336,6 +336,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
+
+
         {/* 폴리곤 네트워크 정보 */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-8">

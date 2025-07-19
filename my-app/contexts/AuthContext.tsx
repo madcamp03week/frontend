@@ -10,6 +10,7 @@ import {
   saveWalletData, 
   getUserWithWallets,
   deactivateWallet,
+  updateUserProfile,
   type UserProfile,
   type WalletData 
 } from '../lib/firestore';
@@ -28,6 +29,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   createNewWallet: () => Promise<void>;
   createNewWalletWithPassword: (password: string) => Promise<void>;
+  updateDisplayName: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -44,6 +46,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => {},
   createNewWallet: async () => {},
   createNewWalletWithPassword: async () => {},
+  updateDisplayName: async () => {},
 });
 
 export const useAuth = () => {
@@ -351,6 +354,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateDisplayName = async (displayName: string) => {
+    if (!user) return;
+
+    try {
+      await updateUserProfile(user.uid, { displayName });
+      setUserProfile(prev => prev ? { ...prev, displayName, updatedAt: new Date() } : null);
+      console.log('닉네임이 성공적으로 업데이트되었습니다.');
+    } catch (error) {
+      console.error('닉네임 업데이트 중 오류:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -375,6 +391,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     createNewWallet,
     createNewWalletWithPassword,
+    updateDisplayName,
   };
 
   return (

@@ -7,10 +7,20 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { user, userProfile, wallets, logout, hasWallet, loading: authLoading, dataLoaded } = useAuth();
+  const { user, userProfile, wallets, logout, hasWallet, loading: authLoading, dataLoaded, updateDisplayName } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [nicknameLoading, setNicknameLoading] = useState(false);
   const router = useRouter();
+
+  // 사용자 프로필이 로드되면 닉네임 상태 초기화
+  useEffect(() => {
+    if (userProfile?.displayName) {
+      setNickname(userProfile.displayName);
+    }
+  }, [userProfile?.displayName]);
 
   // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
   useEffect(() => {
@@ -38,6 +48,30 @@ export default function DashboardPage() {
     // 모달에서 확인 버튼 클릭 시 지갑 설정 페이지로 이동
     setShowWarningModal(false);
     router.push('/wallet-setup');
+  };
+
+  const handleNicknameSave = async () => {
+    if (!nickname.trim()) {
+      alert('닉네임을 입력해주세요.');
+      return;
+    }
+
+    setNicknameLoading(true);
+    try {
+      await updateDisplayName(nickname.trim());
+      setIsEditingNickname(false);
+      alert('닉네임이 성공적으로 저장되었습니다!');
+    } catch (error) {
+      console.error('닉네임 저장 오류:', error);
+      alert('닉네임 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setNicknameLoading(false);
+    }
+  };
+
+  const handleNicknameCancel = () => {
+    setNickname(userProfile?.displayName || '');
+    setIsEditingNickname(false);
   };
 
   if (!user) {
@@ -161,6 +195,83 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-lg font-medium pl-5">
                     {userProfile.createdAt.toLocaleDateString('ko-KR')}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 닉네임 설정 섹션 */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-gray-300 text-sm font-medium">닉네임</span>
+                </div>
+                {!isEditingNickname && (
+                  <button
+                    onClick={() => setIsEditingNickname(true)}
+                    className="flex items-center px-3 py-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 border border-blue-500/30 hover:border-blue-400/50 text-blue-300 hover:text-blue-200 text-sm rounded-lg transition-all duration-300"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    수정
+                  </button>
+                )}
+              </div>
+              
+              {isEditingNickname ? (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="text"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      placeholder="닉네임을 입력하세요"
+                      className="flex-1 px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none transition-colors"
+                      maxLength={20}
+                    />
+                    <button
+                      onClick={handleNicknameSave}
+                      disabled={nicknameLoading || !nickname.trim()}
+                      className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:from-gray-500 disabled:to-gray-600 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 flex items-center"
+                    >
+                      {nicknameLoading ? (
+                        <>
+                          <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          저장 중...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          저장
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleNicknameCancel}
+                      disabled={nicknameLoading}
+                      className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50"
+                    >
+                      취소
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    최대 20자까지 입력 가능합니다. ({nickname.length}/20)
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3">
+                  <p className="text-lg font-medium pl-5">
+                    {userProfile?.displayName ? (
+                      <span className="text-blue-300">{userProfile.displayName}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">닉네임이 설정되지 않았습니다</span>
+                    )}
                   </p>
                 </div>
               )}

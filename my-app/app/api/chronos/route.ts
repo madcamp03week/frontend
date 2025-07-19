@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { firestore } from '../../../lib/firebase';
 
+
 // 타임캡슐 생성 API
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +44,33 @@ export async function POST(request: NextRequest) {
     const chronosRef = collection(firestore, 'chronos');
     const docRef = await addDoc(chronosRef, chronosData);
 
+    // 블록체인에 타임캡슐 생성 (새로운 API 사용)
+    let blockchainResult = null;
+    try {
+      const blockchainResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/blockchain/create-capsule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: chronosData.name,
+          description: chronosData.description,
+          openDate: chronosData.openDate,
+          isPublic: chronosData.isPublic
+        }),
+      });
+      
+      if (blockchainResponse.ok) {
+        blockchainResult = await blockchainResponse.json();
+        console.log('블록체인 생성 결과:', blockchainResult);
+      } else {
+        console.error('블록체인 API 호출 실패:', blockchainResponse.status);
+      }
+    } catch (blockchainError) {
+      console.error('블록체인 생성 실패:', blockchainError);
+      // 블록체인 실패해도 DB 저장은 성공으로 처리
+    }
+
     return NextResponse.json({
       success: true,
       chronosId: docRef.id,
@@ -50,7 +78,8 @@ export async function POST(request: NextRequest) {
       data: {
         ...chronosData,
         id: docRef.id
-      }
+      },
+      blockchain: blockchainResult
     });
 
   } catch (error) {

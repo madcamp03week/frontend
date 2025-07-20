@@ -33,7 +33,11 @@ export default function Home() {
   }, [user, loading, dataLoaded, hasWallet, router, wallets]);
 
   return (
-    <main className="min-h-screen bg-[#1a1a1a] text-white font-sans overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white font-sans relative overflow-hidden">
+      {/* 배경 그라데이션 오브 */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-full filter blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+      
       {/* 네비게이션 */}
       <nav className="w-full flex justify-between items-center px-10 py-6">
        <Link href="/"><div className="text-2xl font-bold">
@@ -69,7 +73,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.5 }}
-          className="px-10 py-6 bg-[#1a1a1a]/50 backdrop-blur-sm border-b border-gray-800 relative"
+          className="px-10 py-6 relative"
         >
           {/* 닫기 버튼 */}
           <button
@@ -128,7 +132,7 @@ export default function Home() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="px-10 py-2 bg-[#1a1a1a]/30 backdrop-blur-sm border-b border-gray-800"
+          className="px-10 py-2"
         >
           <div className="max-w-6xl mx-auto flex justify-center">
             <button
@@ -145,7 +149,7 @@ export default function Home() {
       )}
 
       {/* 메인 텍스트 */}
-      <section className="flex flex-col items-center justify-center mt-28 px-4 text-center">
+      <section className="relative z-10 flex flex-col items-center justify-center mt-28 px-4 text-center">
         <p className="text-lg italic text-gray-300 mb-2">당신의 기억을 영원히</p>
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
           FINANCIAL EXPLORATION
@@ -181,7 +185,7 @@ export default function Home() {
       
 
 {/* 체인 이미지 애니메이션 */}
-      <section className="mt-24 relative h-[300px] w-full flex items-center justify-center">
+      <section className="relative z-10 mt-24 relative h-[300px] w-full flex items-center justify-center">
   {/* 왼쪽 체인 */}
   <motion.img
     src="/asset/c2.png"

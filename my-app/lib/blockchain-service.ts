@@ -128,9 +128,12 @@ export async function createTimeCapsuleOnBlockchain(data: {
   description: string;
   openDate: Date | null;
   recipients?: string[];
+  isTransferable?: boolean;
+  isSmartContractTransferable?: boolean;
+  isSmartContractOpenable?: boolean;
 }) {
   try {
-    const { name, description, openDate, recipients } = data;
+    const { name, description, openDate, recipients, isTransferable = true, isSmartContractTransferable = true, isSmartContractOpenable = true } = data;
     
     // 기본 recipients 설정
     const defaultRecipients = [
@@ -192,7 +195,10 @@ export async function createTimeCapsuleOnBlockchain(data: {
       description,
       openDateTimestamp,
       ipfsResult.unopenedIpfsMetadataCid ? `ipfs://${ipfsResult.unopenedIpfsMetadataCid}` : '',
-      ipfsResult.openedIpfsMetadataCid ? `ipfs://${ipfsResult.openedIpfsMetadataCid}` : ''
+      ipfsResult.openedIpfsMetadataCid ? `ipfs://${ipfsResult.openedIpfsMetadataCid}` : '',
+      isTransferable,
+      isSmartContractTransferable,
+      isSmartContractOpenable
     );
 
     // 트랜잭션 완료 대기

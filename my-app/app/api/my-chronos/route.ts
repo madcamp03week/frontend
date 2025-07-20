@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     }
 
     // TimeCapsule NFT 필터링 (실제 컨트랙트 주소 사용)
-    const TIMECAPSULE_CONTRACT_ADDRESS = '0x1598f3e611b5c9802fafc873479a264f00881661';
+    const TIMECAPSULE_CONTRACT_ADDRESS = '0x28d0e98D8B13ceD9058B83E2158DD6EBb843D5BE';
     
     const timeCapsuleAssets = data.nfts?.filter(nft => 
       nft.contract?.toLowerCase() === TIMECAPSULE_CONTRACT_ADDRESS.toLowerCase()) || [];

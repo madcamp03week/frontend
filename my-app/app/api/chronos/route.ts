@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // 필수 필드 검증
-    const { name, content, openDate, description, isEncrypted, password, isPublic, tags, enhancedSecurity, n, m, nonTransferable, walletAddresses } = body;
+    const { name, content, openDate, description, isEncrypted, password, isPublic, tags, enhancedSecurity, n, m, isTransferable, isSmartContractTransferable, isSmartContractOpenable, walletAddresses } = body;
     
     if (!name) {
       return NextResponse.json(
@@ -35,7 +35,9 @@ export async function POST(request: NextRequest) {
       enhancedSecurity: enhancedSecurity || false,
       n: enhancedSecurity ? n : null,
       m: enhancedSecurity ? m : null,
-      nonTransferable: nonTransferable || false,
+      isTransferable: isTransferable !== undefined ? isTransferable : true,
+      isSmartContractTransferable: isSmartContractTransferable !== undefined ? isSmartContractTransferable : true,
+      isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true,
       userId,
       createdAt: new Date(),
       status: 'active' // active, opened, deleted
@@ -65,7 +67,10 @@ export async function POST(request: NextRequest) {
         name: chronosData.name,
         description: chronosData.description,
         openDate: chronosData.openDate,
-        recipients: userWalletAddresses
+        recipients: userWalletAddresses,
+        isTransferable: chronosData.isTransferable,
+        isSmartContractTransferable: chronosData.isSmartContractTransferable,
+        isSmartContractOpenable: chronosData.isSmartContractOpenable
       });
       
       if (blockchainResult.success) {

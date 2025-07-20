@@ -22,7 +22,7 @@ export default function NewChronosPage() {
   const [m, setM] = useState(2);
   const [isCloning, setIsCloning] = useState(false);
   const [cloneCount, setCloneCount] = useState(1);
-  const [nonTransferable, setNonTransferable] = useState(false);
+
   const [isPublic, setIsPublic] = useState(false);
   const [tags, setTags] = useState('');
   const [manualAddress, setManualAddress] = useState(false);
@@ -31,6 +31,11 @@ export default function NewChronosPage() {
   const toastTimeout = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  
+  // 새로운 토글 상태들
+  const [isTransferable, setIsTransferable] = useState(true);
+  const [isSmartContractTransferable, setIsSmartContractTransferable] = useState(true);
+  const [isSmartContractOpenable, setIsSmartContractOpenable] = useState(true);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -60,7 +65,9 @@ export default function NewChronosPage() {
         enhancedSecurity,
         n: enhancedSecurity ? n : null,
         m: enhancedSecurity ? m : null,
-        nonTransferable,
+        isTransferable,
+        isSmartContractTransferable,
+        isSmartContractOpenable,
         userId: user?.uid || 'anonymous',
         walletAddresses: userWalletAddresses
       };
@@ -524,28 +531,78 @@ export default function NewChronosPage() {
                 )}
               </div>
               
-              {/* 양도 불가능 타임캡슐 */}
+              {/* 전송 가능 타임캡슐 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium">
-                    양도 불가능한 타임캡슐
+                    P2P 전송 가능한 타임캡슐
                   </label>
                   <button
                     type="button"
-                    onClick={() => setNonTransferable(!nonTransferable)}
+                    onClick={() => setIsTransferable(!isTransferable)}
                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
-                      nonTransferable ? 'bg-blue-600' : 'bg-gray-600'
+                      isTransferable ? 'bg-blue-600' : 'bg-gray-600'
                     }`}
                   >
                     <span
                       className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                        nonTransferable ? 'translate-x-5' : 'translate-x-1'
+                        isTransferable ? 'translate-x-5' : 'translate-x-1'
                       }`}
                     />
                   </button>
                 </div>
                 <p className="text-xs text-gray-400">
-                  이 옵션을 선택하면 타임캡슐을 다른 사람에게 양도할 수 없습니다.
+                  타임캡슐을 다른 사람에게 전송할 수 있습니다.
+                </p>
+              </div>
+
+              {/* 스마트 컨트랙트 전송 가능 타임캡슐 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">
+                    Chronos 서비스 전송 가능 타임캡슐
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsSmartContractTransferable(!isSmartContractTransferable)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                      isSmartContractTransferable ? 'bg-blue-600' : 'bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        isSmartContractTransferable ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Chronos 서비스를 통해 타임캡슐을 전송할 수 있습니다.
+                </p>
+              </div>
+
+              {/* 스마트 컨트랙트 열기 가능 타임캡슐 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">
+                  Chronos 서비스 열기 가능 타임캡슐
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsSmartContractOpenable(!isSmartContractOpenable)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                      isSmartContractOpenable ? 'bg-blue-600' : 'bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        isSmartContractOpenable ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Chronos 서비스를 통해 타임캡슐을 열 수 있습니다.
                 </p>
               </div>
             </div>

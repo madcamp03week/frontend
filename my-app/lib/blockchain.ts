@@ -57,44 +57,29 @@ export const createTimeCapsuleOnChain = async (chronosData: {
   }
 };
 
-// 서비스 지갑 연결 상태 확인 (API를 통해 처리)
-export const checkServiceWalletConnection = async () => {
+// 타임캡슐 열기 함수 (클라이언트 사이드)
+export const openTimeCapsule = async (tokenId: string, firebaseToken: string) => {
   try {
-    const response = await fetch('/api/blockchain/wallet-info');
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('서비스 지갑 연결 확인 실패:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '알 수 없는 오류'
-    };
-  }
-};
+    console.log('🚀 타임캡슐 열기 요청 시작:', { tokenId, hasFirebaseToken: !!firebaseToken });
+    
+    const response = await fetch(`/api/chronos/${tokenId}/open`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        firebaseToken
+      }),
+    });
 
-// 서비스 지갑 정보 조회 (API를 통해 처리)
-export const getServiceWalletInfo = async () => {
-  try {
-    const response = await fetch('/api/blockchain/wallet-info');
+    console.log('📡 API 응답 상태:', response.status, response.statusText);
+    
     const result = await response.json();
+    console.log('📄 API 응답 결과:', result);
+    
     return result;
   } catch (error) {
-    console.error('서비스 지갑 정보 조회 실패:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '알 수 없는 오류'
-    };
-  }
-};
-
-// 네트워크 정보 조회 (API를 통해 처리)
-export const getNetworkInfo = async () => {
-  try {
-    const response = await fetch('/api/blockchain/network-info');
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('네트워크 정보 조회 실패:', error);
+    console.error('❌ 타임캡슐 열기 실패:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : '알 수 없는 오류'

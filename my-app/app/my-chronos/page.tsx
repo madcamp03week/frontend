@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect, useRef } from 'react';
 import LoginRequired from '../../components/LoginRequired';
 import Navigation from '../../components/Navigation';
+import { openTimeCapsule } from '../../lib/blockchain';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -21,10 +22,13 @@ const getCachedUserInfo = () => {
 };
 
 export default function MyChronosPage() {
-  const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading } = useAuth();
+  const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading, dataLoaded } = useAuth();
   const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
   const [chronosList, setChronosList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openingTokenId, setOpeningTokenId] = useState<string | null>(null);
+  const [openResult, setOpenResult] = useState<any>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [timeUntilNextRefresh, setTimeUntilNextRefresh] = useState(60);
@@ -38,27 +42,54 @@ export default function MyChronosPage() {
     setCachedUserInfo(getCachedUserInfo());
   }, []);
 
-  // 사용자 로그인 상태 확인 (캐시된 정보 우선 사용)
-  const isUserLoggedIn = isClient && (user || cachedUserInfo);
-  const shouldShowLoading = authLoading && !cachedUserInfo && isClient;
+  // 개선된 로그인 상태 확인 로직
+  const isUserLoggedIn = isClient && (
+    user || // Firebase 사용자 객체가 있거나
+    (cachedUserInfo && cachedUserInfo.userProfile && cachedUserInfo.wallets.length > 0) || // localStorage에 유효한 정보가 있거나
+    (userProfile && wallets.length > 0) // AuthContext에서 로드된 정보가 있거나
+  );
 
-  // 활성 지갑 주소
-  const activeWallet = wallets.find(wallet => wallet.isActive);
+  // 로딩 상태 개선 - localStorage에 정보가 있으면 즉시 로딩 완료로 처리
+  const shouldShowLoading = isClient && authLoading && !cachedUserInfo && !userProfile && !user;
+
+  // 활성 지갑 주소 - localStorage 우선 사용
+  const activeWallet = (cachedUserInfo?.wallets || wallets).find((wallet: any) => wallet.isActive);
 
   // 타임캡슐 목록 가져오기
   const fetchChronosList = async () => {
-    if (!user || !activeWallet) return;
+    // Firebase 사용자가 있으면 Firebase 토큰 사용, 없으면 localStorage 정보만 사용
+    if (!activeWallet) {
+      console.log('활성 지갑이 없습니다.');
+      return;
+    }
     
     setLoading(true);
     try {
-      // Firebase ID 토큰 가져오기
-      const idToken = await user.getIdToken();
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Firebase 사용자가 있으면 토큰 추가
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          headers['Authorization'] = `Bearer ${idToken}`;
+          console.log('🔑 Firebase 토큰 추가됨');
+        } catch (tokenError) {
+          console.log('⚠️ Firebase 토큰 가져오기 실패, localStorage 기반 인증 사용');
+        }
+      } else {
+        console.log('📱 Firebase 사용자 없음, localStorage 기반 인증 사용');
+      }
+      
+      console.log('🌐 API 호출 시작:', {
+        url: `/api/my-chronos?walletAddress=${activeWallet.address}`,
+        hasAuthHeader: !!headers['Authorization'],
+        walletAddress: activeWallet.address
+      });
       
       const response = await fetch(`/api/my-chronos?walletAddress=${activeWallet.address}`, {
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
       
       const result = await response.json();
@@ -69,6 +100,7 @@ export default function MyChronosPage() {
         setLastRefresh(new Date());
       } else {
         console.error('❌ 타임캡슐 목록 조회 실패:', result.error);
+        console.error('📊 응답 상태:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('❌ 타임캡슐 목록 조회 오류:', error);
@@ -83,9 +115,59 @@ export default function MyChronosPage() {
     setTimeUntilNextRefresh(60);
   };
 
+  // 타임캡슐 열기 함수
+  const handleOpenTimeCapsule = async (tokenId: string) => {
+    if (!isUserLoggedIn) {
+      setOpenError('로그인이 필요합니다.');
+      return;
+    }
+
+    if (!tokenId) {
+      setOpenError('Token ID가 필요합니다.');
+      return;
+    }
+
+    setOpeningTokenId(tokenId);
+    setOpenError(null);
+    setOpenResult(null);
+
+    try {
+      let firebaseToken: string | null = null;
+      
+      // Firebase 사용자가 있으면 토큰 가져오기
+      if (user) {
+        try {
+          firebaseToken = await user.getIdToken();
+          console.log('🔑 타임캡슐 열기: Firebase 토큰 가져옴');
+        } catch (tokenError) {
+          console.log('⚠️ 타임캡슐 열기: Firebase 토큰 가져오기 실패');
+        }
+      } else {
+        console.log('📱 타임캡슐 열기: Firebase 사용자 없음');
+      }
+      
+      // 타임캡슐 열기 API 호출
+      const response = await openTimeCapsule(tokenId, firebaseToken || '');
+      
+      if (response.success) {
+        setOpenResult(response);
+        // 성공 시 목록 새로고침
+        setTimeout(() => {
+          fetchChronosList();
+        }, 2000);
+      } else {
+        setOpenError(response.error || '타임캡슐 열기에 실패했습니다.');
+      }
+    } catch (err) {
+      setOpenError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setOpeningTokenId(null);
+    }
+  };
+
   // 자동 새로고침 설정
   useEffect(() => {
-    if (user && activeWallet && isClient) {
+    if (isUserLoggedIn && activeWallet && isClient) {
       // 60초마다 자동 새로고침
       intervalRef.current = setInterval(() => {
         fetchChronosList();
@@ -112,15 +194,31 @@ export default function MyChronosPage() {
         clearInterval(countdownRef.current);
       }
     };
-  }, [user, activeWallet, isClient]);
+  }, [isUserLoggedIn, activeWallet, isClient]);
 
   // 컴포넌트 마운트 시 타임캡슐 목록 가져오기
   useEffect(() => {
-    if (user && activeWallet && isClient) {
+    if (isUserLoggedIn && activeWallet && isClient) {
       console.log('🔄 타임캡슐 목록 가져오기 시작:', activeWallet.address);
       fetchChronosList();
     }
-  }, [user, activeWallet, isClient]);
+  }, [isUserLoggedIn, activeWallet, isClient]);
+
+  // 로딩 중이거나 로그인이 필요한 경우
+  if (shouldShowLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+          <p className="text-gray-300 text-lg">인증 정보를 확인하는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   // 로그인이 필요한 경우
   if (!isUserLoggedIn) {
@@ -232,6 +330,9 @@ export default function MyChronosPage() {
                     지정된 날짜
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
+                    열린 날짜
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
                     Chronos 열기
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
@@ -292,13 +393,71 @@ export default function MyChronosPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-300">
+                      {chronos.openedAt ? new Date(chronos.openedAt).toLocaleDateString('ko-KR') : '열리지 않음'}
+                    </td>
                     <td className="px-6 py-4">
                       {chronos.openDate && new Date(chronos.openDate) > new Date() ? (
-                        <span className="text-gray-400 text-sm">잠김</span>
-                      ) : (
-                        <button className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white rounded-xl transition-all duration-300 text-sm shadow-lg hover:shadow-white/10">
-                          열기
+                        <button className="px-4 py-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400 rounded-xl transition-all duration-300 text-sm shadow-lg cursor-not-allowed">
+                          <div className="flex items-center space-x-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <span>잠김</span>
+                          </div>
                         </button>
+                      ) : chronos.status === 'opened' ? (
+                        <button className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-500/30 text-green-400 rounded-xl transition-all duration-300 text-sm shadow-lg cursor-not-allowed">
+                          <div className="flex items-center space-x-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>열림</span>
+                          </div>
+                        </button>
+                      ) : (
+                        <div>
+                          <button 
+                            onClick={() => handleOpenTimeCapsule(chronos.tokenId)}
+                            disabled={loading || openingTokenId === chronos.tokenId}
+                            className={`px-4 py-2 rounded-xl transition-all duration-300 text-sm shadow-lg ${
+                              openingTokenId === chronos.tokenId 
+                                ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-300 cursor-not-allowed' 
+                                : 'bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white hover:shadow-white/10'
+                            }`}
+                          >
+                            {openingTokenId === chronos.tokenId ? (
+                              <div className="flex items-center space-x-2">
+                                <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>열기 중...</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                <span>열기</span>
+                              </div>
+                            )}
+                          </button>
+                          
+                          {openError && openingTokenId === chronos.tokenId && (
+                            <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                              <p className="text-red-400 text-xs">{openError}</p>
+                            </div>
+                          )}
+                          
+                          {openResult && openingTokenId === chronos.tokenId && (
+                            <div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                              <p className="text-green-400 text-xs font-medium">✅ 타임캡슐 열기 성공!</p>
+                              <p className="text-green-300 text-xs mt-1">
+                                TX: {openResult.data?.transactionHash?.slice(0, 10)}...
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4">

@@ -6,6 +6,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginRequired from '../../components/LoginRequired';
 import Navigation from '../../components/Navigation';
@@ -25,6 +26,7 @@ const getCachedUserInfo = () => {
 
 export default function NewChronosPage() {
   // 모든 훅은 컴포넌트 최상단에서 한 번만 호출
+  const router = useRouter();
   const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading } = useAuth();
   const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
   const [name, setName] = useState('');
@@ -110,7 +112,8 @@ export default function NewChronosPage() {
       if (response.ok) {
         showToast('타임캡슐이 성공적으로 생성되었습니다!', 'success');
         setTimeout(() => {
-          window.location.href = '/my-chronos';
+          // window.location.href 대신 router.push 사용
+          router.push('/my-chronos');
         }, 1200);
       } else {
         showToast(`타임캡슐 생성 실패: ${result.error}`, 'error');

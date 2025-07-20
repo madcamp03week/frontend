@@ -433,3 +433,52 @@ export async function forceTransferToken(tokenId: string, newOwnerAddress: strin
     };
   }
 } 
+
+// NFT 소유권 확인 함수
+export async function checkNFTOwnership(tokenId: string, walletAddress: string) {
+  try {
+    if (!CONTRACT_ADDRESS) {
+      throw new Error('스마트컨트랙트 주소가 설정되지 않았습니다.');
+    }
+
+    if (!INFURA_URL) {
+      throw new Error('Infura URL이 설정되지 않았습니다.');
+    }
+
+    // 새로운 소유자 주소 유효성 검증
+    if (!ethers.isAddress(walletAddress)) {
+      throw new Error('유효하지 않은 이더리움 주소입니다.');
+    }
+
+    // Provider 초기화 (읽기 전용)
+    const provider = new ethers.JsonRpcProvider(INFURA_URL);
+    
+    // 컨트랙트 인스턴스 생성 (읽기 전용)
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      provider
+    );
+
+    // NFT 소유자 조회
+    const owner = await contract.ownerOf(tokenId);
+    
+    // 소유권 확인
+    const isOwner = owner.toLowerCase() === walletAddress.toLowerCase();
+    
+    return {
+      success: true,
+      tokenId: tokenId,
+      walletAddress: walletAddress,
+      actualOwner: owner,
+      isOwner: isOwner
+    };
+
+  } catch (error) {
+    console.error('NFT 소유권 확인 실패:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    };
+  }
+} 

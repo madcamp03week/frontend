@@ -66,44 +66,58 @@ export async function POST(request: NextRequest) {
     }
 
     // 2️⃣ 블록체인 생성 성공 후 Firestore에 타임캡슐 저장
-    const chronosData = {
-      name,
-      description: description || '',
-      openDate: openDate ? new Date(openDate) : null,
-      isEncrypted: isEncrypted || false,
-      password: isEncrypted ? password : null,
-      isPublic: isPublic || false,
-      tags: tags ? tags.split(',').map((tag: string) => tag.trim()) : [],
-      enhancedSecurity: enhancedSecurity || false,
-      n: enhancedSecurity ? n : null,
-      m: enhancedSecurity ? m : null,
-      isTransferable: isTransferable !== undefined ? isTransferable : true,
-      isSmartContractTransferable: isSmartContractTransferable !== undefined ? isSmartContractTransferable : true,
-      isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true,
-      userId,
-      createdAt: new Date(),
-      status: 'active', // active, opened, deleted
-      // 블록체인 정보 추가
-      tokenId: blockchainResult.tokenId,
-      contractAddress: blockchainResult.contractAddress,
-      transactionHash: blockchainResult.transactionHash,
-      blockNumber: blockchainResult.blockNumber,
-      ipfsMetadata: blockchainResult.ipfsMetadata
-    };
-
-    // Firestore에 타임캡슐 저장
+    // 각 수신자별로 개별 chronos 문서 생성
     const chronosRef = collection(firestore, 'chronos');
-    const docRef = await addDoc(chronosRef, chronosData);
+    const chronosResults = [];
+
+    for (const recipientAddress of userWalletAddresses) {
+      const chronosData = {
+        name,
+        description: description || '',
+        openDate: openDate ? new Date(openDate) : null,
+        isEncrypted: isEncrypted || false,
+        password: isEncrypted ? password : null,
+        isPublic: isPublic || false,
+        tags: tags ? tags.split(',').map((tag: string) => tag.trim()) : [],
+        enhancedSecurity: enhancedSecurity || false,
+        n: enhancedSecurity ? n : null,
+        m: enhancedSecurity ? m : null,
+        isTransferable: isTransferable !== undefined ? isTransferable : true,
+        isSmartContractTransferable: isSmartContractTransferable !== undefined ? isSmartContractTransferable : true,
+        isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true,
+        userId,
+        recipientAddress, // 수신자 주소 추가
+        createdAt: new Date(),
+        status: 'active', // active, opened, deleted
+        // 블록체인 정보 추가
+        tokenId: blockchainResult.tokenId,
+        contractAddress: blockchainResult.contractAddress,
+        transactionHash: blockchainResult.transactionHash,
+        blockNumber: blockchainResult.blockNumber,
+        ipfsMetadata: blockchainResult.ipfsMetadata,
+        // 수신자 정보 추가
+        isRecipient: true, // 수신자 문서임을 표시
+        originalCreator: userId, // 원본 생성자
+        totalRecipients: userWalletAddresses.length, // 총 수신자 수
+        recipientIndex: userWalletAddresses.indexOf(recipientAddress) // 수신자 순서
+      };
+
+      // Firestore에 타임캡슐 저장
+      const docRef = await addDoc(chronosRef, chronosData);
+      chronosResults.push({
+        ...chronosData,
+        id: docRef.id
+      });
+      
+      console.log(`✅ 수신자 ${recipientAddress}용 chronos 문서 생성 완료:`, docRef.id);
+    }
 
     return NextResponse.json({
       success: true,
-      chronosId: docRef.id,
+      chronosIds: chronosResults.map(c => c.id),
       tokenId: blockchainResult.tokenId,
-      message: '타임캡슐이 성공적으로 생성되었습니다.',
-      data: {
-        ...chronosData,
-        id: docRef.id
-      },
+      message: `${userWalletAddresses.length}명에게 타임캡슐이 성공적으로 생성되었습니다.`,
+      data: chronosResults,
       blockchain: blockchainResult
     });
 

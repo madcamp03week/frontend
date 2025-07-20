@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '../../../lib/firebase-admin';
+import { adminDb } from '../../../lib/firebase-admin';
 
 interface OpenSeaV2NFT {
   identifier: string;
@@ -49,22 +50,28 @@ interface ChronosData {
 
 export async function GET(request: NextRequest) {
   try {
-    // 인증 확인
+    // 인증 확인 - Firebase 토큰 또는 localStorage 기반 인증 허용
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
+    let userId: string | null = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Firebase 토큰 기반 인증
+      const token = authHeader.split('Bearer ')[1];
+      try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        userId = decodedToken.uid;
+        console.log('🔍 Firebase 토큰 기반 사용자 ID:', userId);
+      } catch (error) {
+        console.log('⚠️ Firebase 토큰 검증 실패, localStorage 기반 인증 시도');
+      }
     }
-
-    const token = authHeader.split('Bearer ')[1];
-    let decodedToken;
-    try {
-      decodedToken = await adminAuth.verifyIdToken(token);
-    } catch (error) {
-      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 });
+    
+    // Firebase 토큰이 없거나 유효하지 않은 경우 localStorage 기반 인증 허용
+    if (!userId) {
+      console.log('📱 localStorage 기반 인증 허용');
+      // localStorage 기반 인증의 경우 userId는 null로 처리
+      // 실제 검증은 지갑 주소 기반으로 수행
     }
-
-    const userId = decodedToken.uid;
-    console.log('🔍 사용자 ID:', userId);
 
     // URL 파라미터에서 지갑 주소 가져오기
     const { searchParams } = new URL(request.url);
@@ -163,15 +170,87 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ 변환된 Chronos 데이터:', chronosList.length);
 
-    return NextResponse.json({
-      success: true,
-      data: chronosList,
-      stats: {
-        total: chronosList.length,
-        timeCapsules: timeCapsuleAssets.length,
-        totalAssets: data.nfts?.length || 0,
-      }
-    });
+    // Firestore의 chronos 컬렉션에서 추가 정보 가져오기
+    console.log('📊 Firestore chronos 데이터 조회 시작');
+    try {
+      const chronosQuery = adminDb.collection('chronos')
+        .where('recipientAddress', '==', walletAddress)
+        .where('isRecipient', '==', true);
+      
+      const chronosSnapshot = await chronosQuery.get();
+      console.log('📊 Firestore chronos 문서 수:', chronosSnapshot.size);
+      
+      // Firestore 데이터를 Map으로 변환 (tokenId를 키로)
+      const chronosMap = new Map();
+      chronosSnapshot.forEach(doc => {
+        const data = doc.data();
+        chronosMap.set(data.tokenId, {
+          ...data,
+          id: doc.id
+        });
+      });
+      
+      // OpenSea 데이터와 Firestore 데이터 병합
+      const enrichedChronosList = chronosList.map(nft => {
+        const firestoreData = chronosMap.get(nft.tokenId);
+        if (firestoreData) {
+          console.log(`🔍 Token ${nft.tokenId} 데이터 병합:`, {
+            openSeaName: nft.name,
+            firestoreName: firestoreData.name,
+            finalName: firestoreData.name || nft.name
+          });
+          
+          return {
+            ...nft,
+            // Firestore 데이터로 덮어쓰기
+            name: firestoreData.name || nft.name,
+            description: firestoreData.description || nft.description,
+            openDate: firestoreData.openDate ? new Date(firestoreData.openDate.seconds * 1000).toISOString() : nft.openDate,
+            status: firestoreData.status || 'active',
+            isEncrypted: firestoreData.isEncrypted || false,
+            isPublic: firestoreData.isPublic || false,
+            tags: firestoreData.tags || [],
+            // 추가 Firestore 정보
+            chronosId: firestoreData.id,
+            originalCreator: firestoreData.originalCreator,
+            totalRecipients: firestoreData.totalRecipients,
+            recipientIndex: firestoreData.recipientIndex,
+            createdAt: firestoreData.createdAt ? new Date(firestoreData.createdAt.seconds * 1000).toISOString() : undefined,
+            openedAt: firestoreData.openedAt ? new Date(firestoreData.openedAt.seconds * 1000).toISOString() : undefined,
+            openedBy: firestoreData.openedBy,
+            openedTransactionHash: firestoreData.openedTransactionHash
+          };
+        }
+        return nft;
+      });
+      
+      console.log('✅ 데이터 병합 완료:', enrichedChronosList.length);
+      
+      return NextResponse.json({
+        success: true,
+        data: enrichedChronosList,
+        stats: {
+          total: enrichedChronosList.length,
+          timeCapsules: timeCapsuleAssets.length,
+          totalAssets: data.nfts?.length || 0,
+          firestoreDocuments: chronosSnapshot.size
+        }
+      });
+      
+    } catch (firestoreError) {
+      console.error('❌ Firestore chronos 조회 실패:', firestoreError);
+      // Firestore 조회 실패 시 OpenSea 데이터만 반환
+      return NextResponse.json({
+        success: true,
+        data: chronosList,
+        stats: {
+          total: chronosList.length,
+          timeCapsules: timeCapsuleAssets.length,
+          totalAssets: data.nfts?.length || 0,
+          firestoreDocuments: 0
+        }
+      });
+    }
 
   } catch (error) {
     console.error('❌ my-chronos API 오류:', error);

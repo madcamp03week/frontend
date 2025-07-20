@@ -57,6 +57,36 @@ export const createTimeCapsuleOnChain = async (chronosData: {
   }
 };
 
+// 타임캡슐 열기 함수 (클라이언트 사이드)
+export const openTimeCapsule = async (tokenId: string, firebaseToken: string) => {
+  try {
+    console.log('🚀 타임캡슐 열기 요청 시작:', { tokenId, hasFirebaseToken: !!firebaseToken });
+    
+    const response = await fetch(`/api/chronos/${tokenId}/open`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        firebaseToken
+      }),
+    });
+
+    console.log('📡 API 응답 상태:', response.status, response.statusText);
+    
+    const result = await response.json();
+    console.log('📄 API 응답 결과:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('❌ 타임캡슐 열기 실패:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    };
+  }
+};
+
 // 초기화 실행
 if (typeof window !== 'undefined') {
   initializeBlockchain();

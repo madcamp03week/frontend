@@ -131,9 +131,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
   
-  // 클라이언트 사이드 렌더링 확인
+  // 클라이언트 사이드 렌더링 확인 및 초기 localStorage 데이터 로드
   useEffect(() => {
     setIsClient(true);
+    
+    // 초기 로딩 시 localStorage에서 캐시된 데이터를 즉시 로드
+    const cachedProfile = getStoredUserProfile();
+    const cachedWallets = getStoredWallets();
+    
+    if (cachedProfile && cachedWallets.length > 0) {
+      console.log('초기 로딩: 캐시된 데이터를 즉시 로드:', { 
+        profile: cachedProfile.displayName, 
+        walletsCount: cachedWallets.length 
+      });
+      setUserProfile(cachedProfile);
+      setWallets(cachedWallets);
+      setDataLoaded(true);
+      setLoading(false); // 캐시된 데이터가 있으면 즉시 로딩 완료
+    }
   }, []);
   
   // 지갑 보유 여부 계산 (클라이언트에서만 계산)

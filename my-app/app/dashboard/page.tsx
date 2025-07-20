@@ -7,6 +7,7 @@ import PrivateKeyWarningModal from '../../components/PrivateKeyWarningModal';
 import PrivateKeyDisplayModal from '../../components/PrivateKeyDisplayModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import LoginRequired from '../../components/LoginRequired';
 
 // 날짜를 안전하게 처리하는 함수
 const formatDate = (date: any): string => {
@@ -239,29 +240,7 @@ export default function DashboardPage() {
   }, [transactions, transactionsLoading, transactionStats]);
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-indigo-900">
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-12 text-center shadow-2xl">
-          <div className="w-20 h-20 mx-auto mb-8 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            인증이 필요합니다
-          </h1>
-          <a 
-            href="/login" 
-            className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            로그인하기
-          </a>
-        </div>
-      </div>
-    );
+    return <LoginRequired />;
   }
 
   return (

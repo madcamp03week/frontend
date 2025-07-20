@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect, useRef } from 'react';
+import LoginRequired from '../../components/LoginRequired';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -119,17 +120,8 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
   }, [user, activeWallet]);
 
   // 로그인이 필요한 경우
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white text-center">
-          <h1 className="text-2xl font-bold mb-4">로그인이 필요합니다</h1>
-          <a href="/login" className="text-blue-400 hover:text-blue-300">
-            로그인 페이지로 이동
-          </a>
-        </div>
-      </div>
-    );
+  if (!isUserLoggedIn) {
+    return <LoginRequired />;
   }
 
   // 활성 지갑 주소

@@ -129,14 +129,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [wallets, setWallets] = useState<WalletData[]>([]);
   const [shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
-  // 지갑 보유 여부 계산 (데이터가 로드된 후에만 계산)
-  const hasWallet = dataLoaded ? wallets.some(wallet => wallet.isActive) : false;
+  // 클라이언트 사이드 렌더링 확인
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  // 지갑 보유 여부 계산 (클라이언트에서만 계산)
+  const hasWallet = isClient && dataLoaded ? wallets.some(wallet => wallet.isActive) : false;
   console.log('지갑 보유 여부 계산:', { 
     walletsCount: wallets.length, 
     activeWallets: wallets.filter(w => w.isActive).length, 
     hasWallet,
-    dataLoaded 
+    dataLoaded,
+    isClient
   });
 
   // OAuth 사용자를 위한 지갑 생성 함수

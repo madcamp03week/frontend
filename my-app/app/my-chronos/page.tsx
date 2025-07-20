@@ -21,24 +21,26 @@ const getCachedUserInfo = () => {
 };
 
 export default function MyChronosPage() {
-const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading } = useAuth();
+  const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading } = useAuth();
   const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
   const [chronosList, setChronosList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [timeUntilNextRefresh, setTimeUntilNextRefresh] = useState(10);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [timeUntilNextRefresh, setTimeUntilNextRefresh] = useState(60);
+  const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 컴포넌트 마운트 시 캐시된 사용자 정보 확인
+  // 클라이언트 사이드 렌더링 확인
   useEffect(() => {
+    setIsClient(true);
     setCachedUserInfo(getCachedUserInfo());
   }, []);
 
   // 사용자 로그인 상태 확인 (캐시된 정보 우선 사용)
-  const isUserLoggedIn = user || cachedUserInfo;
-  const shouldShowLoading = authLoading && !cachedUserInfo;
+  const isUserLoggedIn = isClient && (user || cachedUserInfo);
+  const shouldShowLoading = authLoading && !cachedUserInfo && isClient;
 
   // 활성 지갑 주소
   const activeWallet = wallets.find(wallet => wallet.isActive);
@@ -78,23 +80,23 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
   // 수동 새로고침 함수
   const handleManualRefresh = () => {
     fetchChronosList();
-    setTimeUntilNextRefresh(10);
+    setTimeUntilNextRefresh(60);
   };
 
   // 자동 새로고침 설정
   useEffect(() => {
-    if (user && activeWallet) {
-      // 10초마다 자동 새로고침
+    if (user && activeWallet && isClient) {
+      // 60초마다 자동 새로고침
       intervalRef.current = setInterval(() => {
         fetchChronosList();
-        setTimeUntilNextRefresh(10);
-      }, 10000);
+        setTimeUntilNextRefresh(60);
+      }, 60000);
 
       // 카운트다운 타이머
       countdownRef.current = setInterval(() => {
         setTimeUntilNextRefresh(prev => {
           if (prev <= 1) {
-            return 10;
+            return 60;
           }
           return prev - 1;
         });
@@ -110,15 +112,15 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
         clearInterval(countdownRef.current);
       }
     };
-  }, [user, activeWallet]);
+  }, [user, activeWallet, isClient]);
 
   // 컴포넌트 마운트 시 타임캡슐 목록 가져오기
   useEffect(() => {
-    if (user && activeWallet) {
+    if (user && activeWallet && isClient) {
       console.log('🔄 타임캡슐 목록 가져오기 시작:', activeWallet.address);
       fetchChronosList();
     }
-  }, [user, activeWallet]);
+  }, [user, activeWallet, isClient]);
 
   // 로그인이 필요한 경우
   if (!isUserLoggedIn) {
@@ -127,7 +129,6 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
 
   // 활성 지갑 주소
   const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white relative overflow-hidden">
@@ -147,12 +148,12 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
               </h1>
               <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"></div>
             </div>
-                          <div className="flex items-center space-x-4">
-                {/* 마지막 새로고침 시간 */}
-                <div className="text-sm text-gray-400">
-                  마지막 업데이트: {lastRefresh.toLocaleTimeString('ko-KR')}
-                </div>
+            <div className="flex items-center space-x-4">
+              {/* 마지막 새로고침 시간 */}
+              <div className="text-sm text-gray-400">
+                마지막 업데이트: {isClient && lastRefresh ? lastRefresh.toLocaleTimeString('ko-KR') : '로딩 중...'}
               </div>
+            </div>
           </div>
           
           {/* 새로고침 컨트롤 */}
@@ -177,7 +178,7 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
                   <span>자동 새로고침 활성화</span>
                 </div>
                 <div className="text-blue-400 font-medium">
-                  {timeUntilNextRefresh}초 후 새로고침
+                  {isClient ? `${timeUntilNextRefresh}초 후 새로고침` : '로딩 중...'}
                 </div>
               </div>
             </div>
@@ -318,7 +319,7 @@ const { user, wallets, userProfile, logout, createNewWallet, loading: authLoadin
         </div>
 
         {/* 빈 상태 메시지 */}
-        {chronosList.length === 0 && (
+        {chronosList.length === 0 && !loading && (
           <div className="text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-full flex items-center justify-center">
               <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -29,7 +29,7 @@ export default function Navigation() {
   }, []);
 
   // 사용자 로그인 상태 확인 (캐시된 정보 우선 사용)
-  const isUserLoggedIn = user || cachedUserInfo;
+  const isUserLoggedIn = isClient && (user || cachedUserInfo);
   const shouldShowLoading = authLoading && !cachedUserInfo && isClient;
 
   return (

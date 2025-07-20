@@ -110,12 +110,10 @@ export async function GET(request: NextRequest) {
     }
 
     // TimeCapsule NFT 필터링 (실제 컨트랙트 주소 사용)
-    const TIMECAPSULE_CONTRACT_ADDRESS = '0xb39b584c68f3daf59b4028f6b593dad3350ddaaf';
+    const TIMECAPSULE_CONTRACT_ADDRESS = '0x1598f3e611b5c9802fafc873479a264f00881661';
     
     const timeCapsuleAssets = data.nfts?.filter(nft => 
-      nft.contract?.toLowerCase() === TIMECAPSULE_CONTRACT_ADDRESS.toLowerCase() ||
-      nft.collection?.toLowerCase() === TIMECAPSULE_CONTRACT_ADDRESS.toLowerCase()
-    ) || [];
+      nft.contract?.toLowerCase() === TIMECAPSULE_CONTRACT_ADDRESS.toLowerCase()) || [];
 
     console.log('⏰ TimeCapsule NFT 개수:', timeCapsuleAssets.length);
 

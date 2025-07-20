@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Navigation from '../../components/Navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -224,20 +225,7 @@ export default function LoginPage() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
       
       {/* 네비게이션 */}
-      <nav className="w-full flex justify-between items-center px-10 py-6">
-        <Link href="/">
-          <div className="text-2xl font-bold">
-            Chronos
-          </div>
-        </Link>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/new-chronos">New Chronos</Link>
-          <Link href="/my-chronos">My Chronos</Link>
-          <Link href="/login">Login</Link>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* 메인 컨텐츠 */}
       <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-120px)] px-4 sm:px-6 lg:px-8">

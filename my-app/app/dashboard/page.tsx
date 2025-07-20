@@ -8,6 +8,7 @@ import PrivateKeyDisplayModal from '../../components/PrivateKeyDisplayModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LoginRequired from '../../components/LoginRequired';
+import Navigation from '../../components/Navigation';
 
 // 날짜를 안전하게 처리하는 함수
 const formatDate = (date: any): string => {
@@ -250,32 +251,7 @@ export default function DashboardPage() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
       
       {/* 네비게이션 */}
-      <nav className="w-full flex justify-between items-center px-10 py-6">
-      <Link href="/"><div className="text-2xl font-bold">
-         Chronos
-        </div></Link>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/new-chronos">New Chronos</Link>
-          <Link href="/my-chronos">My Chronos</Link>
-          {!loading && (
-            user ? (
-              <>
-                <Link href="/dashboard">Dashboard</Link>
-                <button
-                  onClick={logout}
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link href="/login">Login</Link>
-            )
-          )}
-        </div>
-      </nav>
+      <Navigation />
 
       {/* 메인 컨텐츠 */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
@@ -836,14 +812,14 @@ export default function DashboardPage() {
                      아직 블록체인에서 활동한 기록이 없습니다. 타임캡슐을 생성하거나 관리하면 여기에 표시됩니다.
                    </p>
                    <div className="flex justify-center space-x-4">
-                     <Link href="/new-chronos" className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 transform hover:scale-105">
-                       <svg className="w-5 h-5 mr-2 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <Link href="/new-chronos" className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-white/10">
+                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                        </svg>
                        새 타임캡슐 생성
                      </Link>
-                     <Link href="/my-chronos" className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105">
-                       <svg className="w-5 h-5 mr-2 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <Link href="/my-chronos" className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-white/10">
+                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                        </svg>
                        내 타임캡슐 보기

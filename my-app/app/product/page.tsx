@@ -4,22 +4,13 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import SubscribeFooter from '../components/SubscribeFooter';
+import Navigation from '../../components/Navigation';
 
 export default function ProductPage() {
   return (
     <main className="min-h-screen bg-black text-white font-sans">
-       {/* 네비게이션 */}
-        <nav className="w-full flex justify-between items-center px-10 py-6">
-        <div className="text-2xl font-bold">
-        <Link href="/">Chronos</Link>
-        </div>
-        <div className="space-x-8 text-sm text-gray-300 font-light"> 
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/artist">Artist</Link>
-          <Link href="/wallet">Wallet</Link>
-        </div>
-      </nav>
+      {/* 네비게이션 */}
+      <Navigation />
 
       {/* Hero Section */}
       <section className="text-center py-20 px-6 md:px-12">

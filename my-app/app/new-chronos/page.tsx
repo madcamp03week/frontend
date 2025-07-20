@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginRequired from '../../components/LoginRequired';
+import Navigation from '../../components/Navigation';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -151,34 +152,7 @@ export default function NewChronosPage() {
         </div>
       )}
       {/* 네비게이션 */}
-      <nav className="w-full flex justify-between items-center px-10 py-6">
-        <Link href="/" className="text-2xl font-bold text-white">
-        <div className="text-2xl font-bold">
-         Chronos
-        </div>
-        </Link>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/new-chronos">New Chronos</Link>
-          <Link href="/my-chronos">My Chronos</Link>
-          {!shouldShowLoading && (
-            isUserLoggedIn ? (
-              <>
-                <Link href="/dashboard">Dashboard</Link>
-                <button
-                  onClick={logout}
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link href="/login">Login</Link>
-            )
-          )}
-        </div>
-      </nav>
+      <Navigation />
       
       {/* 메인 컨텐츠 */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
@@ -667,7 +641,7 @@ export default function NewChronosPage() {
             </Link>
             <button
               type="submit"
-              className="px-8 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-purple-500/25 hover:scale-105 hover:-translate-y-1 active:scale-95"
+              className="px-8 py-3 bg-gradient-to-r from-purple-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-purple-500/30 border-2 border-purple-500/30 hover:border-purple-500/50 text-purple-200 hover:text-purple-100 font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
             >
               타임캡슐 생성
             </button>

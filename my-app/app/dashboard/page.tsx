@@ -55,17 +55,6 @@ export default function DashboardPage() {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nicknameLoading, setNicknameLoading] = useState(false);
   const [showInactiveWallets, setShowInactiveWallets] = useState(false);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [transactionStats, setTransactionStats] = useState({
-    total: 0,
-    success: 0,
-    failed: 0,
-    nftMints: 0,
-    nftTransfers: 0,
-    tokenTransfers: 0,
-    contractInteractions: 0,
-  });
-  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const router = useRouter();
 
   // 사용자 프로필이 로드되면 닉네임 상태 초기화
@@ -170,76 +159,6 @@ export default function DashboardPage() {
     setShowPrivateKeyWarningModal(true);
   };
 
-  // 트랜잭션 데이터 가져오기
-  const fetchTransactions = async () => {
-    if (!user) return;
-    
-    setTransactionsLoading(true);
-    try {
-      // Firebase ID 토큰 가져오기
-      const idToken = await user.getIdToken();
-      
-      console.log('🔍 트랜잭션 API 호출 시작...');
-      
-      const response = await fetch('/api/transactions?limit=20', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-      });
-
-      const data = await response.json();
-      
-      console.log('📊 트랜잭션 API 응답:', {
-        status: response.status,
-        ok: response.ok,
-        data: data
-      });
-
-      if (response.ok) {
-        console.log('✅ 트랜잭션 데이터 설정:', {
-          transactionsCount: data.data?.length || 0,
-          stats: data.stats
-        });
-        setTransactions(data.data || []);
-        setTransactionStats(data.stats || {
-          total: 0,
-          success: 0,
-          failed: 0,
-          nftMints: 0,
-          nftTransfers: 0,
-          tokenTransfers: 0,
-          contractInteractions: 0,
-        });
-      } else {
-        console.error('❌ 트랜잭션 조회 실패:', data.error);
-      }
-    } catch (error) {
-      console.error('❌ 트랜잭션 조회 오류:', error);
-    } finally {
-      setTransactionsLoading(false);
-    }
-  };
-
-  // 컴포넌트 마운트 시 트랜잭션 데이터 가져오기
-  useEffect(() => {
-    console.log('🔄 useEffect 실행:', { user: !!user, hasWallet, dataLoaded });
-    if (user && hasWallet) {
-      console.log('🚀 트랜잭션 데이터 가져오기 시작');
-      fetchTransactions();
-    }
-  }, [user, hasWallet]);
-
-  // 트랜잭션 상태 디버깅
-  useEffect(() => {
-    console.log('📈 트랜잭션 상태 업데이트:', {
-      transactionsCount: transactions.length,
-      transactionsLoading,
-      transactionStats
-    });
-  }, [transactions, transactionsLoading, transactionStats]);
-
   if (!user) {
     return <LoginRequired />;
   }
@@ -251,7 +170,34 @@ export default function DashboardPage() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
       
       {/* 네비게이션 */}
-      <Navigation />
+      <nav className="w-full flex justify-between items-center px-10 py-6">
+        <Link href="/" className="text-2xl font-bold text-white">
+        <div className="text-2xl font-bold">
+         Chronos
+        </div>
+        </Link>
+        <div className="space-x-8 text-sm text-gray-300 font-light">
+          <Link href="/company">Company</Link>
+          <Link href="/product">Product</Link>
+          <Link href="/new-chronos">New Chronos</Link>
+          <Link href="/my-chronos">My Chronos</Link>
+          {!loading && (
+            user ? (
+              <>
+                <Link href="/dashboard">Dashboard</Link>
+                <button
+                  onClick={logout}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/login">Login</Link>
+            )
+          )}
+        </div>
+      </nav>
 
       {/* 메인 컨텐츠 */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
@@ -638,7 +584,7 @@ export default function DashboardPage() {
 
 
         {/* 폴리곤 네트워크 정보 */}
-        <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-8">
+        <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-8">
             <div className="flex items-center mb-8">
               <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center mr-6">
@@ -693,219 +639,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
-        {/* 내 트랜잭션들 */}
-        <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-orange-500/20 to-red-600/20 border border-orange-500/30 flex items-center justify-center mr-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-orange-200 bg-clip-text text-transparent">
-                    내 트랜잭션들
-                  </h2>
-                  <p className="text-gray-400"> 내 지갑의 Chronos 트랙잭션들</p>
-                </div>
-              </div>
-                             <div className="flex items-center space-x-3">
-                 <button 
-                   onClick={fetchTransactions}
-                   disabled={transactionsLoading}
-                   className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30 border border-blue-500/30 hover:border-blue-400/50 text-blue-300 hover:text-blue-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25 transform hover:scale-105 disabled:opacity-50"
-                 >
-                   {transactionsLoading ? (
-                     <>
-                       <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                       </svg>
-                       로딩 중...
-                     </>
-                   ) : (
-                     <>
-                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                       </svg>
-                       새로고침
-                     </>
-                   )}
-                 </button>
-                 {wallets.filter(wallet => wallet.isActive).length > 0 && (
-                   <a
-                     href={`https://polygonscan.com/address/${wallets.filter(wallet => wallet.isActive)[0].address}`}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="flex items-center px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 border border-green-500/30 hover:border-green-400/50 text-green-300 hover:text-green-200 text-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-green-500/25 transform hover:scale-105"
-                   >
-                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                     </svg>
-                     Polygonscan
-                   </a>
-                 )}
-               </div>
-            </div>
-            
-                         {/* 트랜잭션 통계 카드 */}
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-               <div className="group backdrop-blur-sm bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/30 rounded-2xl p-6 hover:border-blue-400/50 transition-all duration-300 hover:shadow-blue-500/25 transform hover:scale-105">
-                 <div className="flex items-center mb-4">
-                   <div className="w-3 h-3 bg-blue-400 rounded-full mr-3 animate-pulse"></div>
-                   <p className="text-gray-300 text-sm font-medium">총 Chronos</p>
-                 </div>
-                 <p className="text-2xl font-bold text-blue-300">{transactionStats.total}</p>
-                 <p className="text-xs text-gray-400 mt-2">전체 NFT 활동</p>
-               </div>
-               
-               <div className="group backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all duration-300 hover:shadow-purple-500/25 transform hover:scale-105">
-                 <div className="flex items-center mb-4">
-                   <div className="w-3 h-3 bg-purple-400 rounded-full mr-3 animate-pulse"></div>
-                   <p className="text-gray-300 text-sm font-medium">생성</p>
-                 </div>
-                 <p className="text-2xl font-bold text-purple-300">{transactions.filter(tx => tx.methodName === 'Chronos 생성').length}</p>
-                 <p className="text-xs text-gray-400 mt-2">생성한 Chronos</p>
-               </div>
-               
-               <div className="group backdrop-blur-sm bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-6 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-cyan-500/25 transform hover:scale-105">
-                 <div className="flex items-center mb-4">
-                   <div className="w-3 h-3 bg-cyan-400 rounded-full mr-3 animate-pulse"></div>
-                   <p className="text-gray-300 text-sm font-medium">전송</p>
-                 </div>
-                 <p className="text-2xl font-bold text-cyan-300">{transactions.filter(tx => tx.methodName === 'Chronos 보냄' || tx.methodName === 'Chronos 받음').length}</p>
-                 <p className="text-xs text-gray-400 mt-2">전송/수신 활동</p>
-               </div>
-               
-               <div className="group backdrop-blur-sm bg-gradient-to-br from-red-500/10 to-pink-500/10 border border-red-500/30 rounded-2xl p-6 hover:border-red-400/50 transition-all duration-300 hover:shadow-red-500/25 transform hover:scale-105">
-                 <div className="flex items-center mb-4">
-                   <div className="w-3 h-3 bg-red-400 rounded-full mr-3 animate-pulse"></div>
-                   <p className="text-gray-300 text-sm font-medium">실패</p>
-                 </div>
-                 <p className="text-2xl font-bold text-red-300">{transactionStats.failed}</p>
-                 <p className="text-xs text-gray-400 mt-2">실패한 트랜잭션</p>
-               </div>
-             </div>
-            
-                         {/* 트랜잭션 목록 */}
-             <div className="space-y-4">
-               {transactionsLoading ? (
-                 <div className="text-center py-12">
-                   <div className="w-20 h-20 mx-auto mb-8 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-full flex items-center justify-center border border-blue-500/30 animate-pulse">
-                     <svg className="w-10 h-10 text-blue-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                     </svg>
-                   </div>
-                   <h3 className="text-2xl font-bold mb-4 text-blue-300">트랜잭션 로딩 중...</h3>
-                   <p className="text-gray-400">블록체인에서 트랜잭션을 가져오는 중입니다.</p>
-                 </div>
-               ) : transactions.length === 0 ? (
-                 <div className="text-center py-12">
-                   <div className="w-20 h-20 mx-auto mb-8 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-full flex items-center justify-center border border-gray-500/30">
-                     <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                     </svg>
-                   </div>
-                   <h3 className="text-2xl font-bold mb-4 text-gray-300">트랜잭션이 없습니다</h3>
-                   <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                     아직 블록체인에서 활동한 기록이 없습니다. 타임캡슐을 생성하거나 관리하면 여기에 표시됩니다.
-                   </p>
-                   <div className="flex justify-center space-x-4">
-                     <Link href="/new-chronos" className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-white/10">
-                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                       </svg>
-                       새 타임캡슐 생성
-                     </Link>
-                     <Link href="/my-chronos" className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-white/10">
-                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                       </svg>
-                       내 타임캡슐 보기
-                     </Link>
-                   </div>
-                 </div>
-               ) : (
-                 <div className="space-y-3">
-                   {transactions.map((tx, index) => (
-                     <div 
-                       key={tx.hash} 
-                       className={`group backdrop-blur-sm border rounded-xl p-4 transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
-                         tx.status === 'success' 
-                           ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-400/50 hover:shadow-green-500/25'
-                           : 'bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30 hover:border-red-400/50 hover:shadow-red-500/25'
-                       }`}
-                     >
-                       <div className="flex items-center justify-between">
-                         <div className="flex items-center space-x-4">
-                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                             tx.methodName === 'Chronos 생성' 
-                               ? 'bg-purple-500/50'
-                               : tx.methodName === 'Chronos 보냄'
-                               ? 'bg-cyan-500/50'
-                               : tx.methodName === 'Chronos 받음'
-                               ? 'bg-cyan-500/50'
-                               : 'bg-gray-500/20'
-                           }`}>
-                             {tx.methodName === 'Chronos 생성' ? (
-                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                               </svg>
-                             ) : tx.methodName === 'Chronos 보냄' ? (
-                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                               </svg>
-                             ) : tx.methodName === 'Chronos 받음' ? (
-                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                               </svg>
-                             ) : (
-                               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                               </svg>
-                             )}
-                           </div>
-                           <div>
-                             <p className={`font-semibold ${
-                               tx.status === 'success' ? 'text-green-300' : 'text-red-300'
-                             }`}>
-                               {tx.methodName || 'NFT Transfer'}
-                             </p>
-                             <p className="text-sm text-gray-400">
-                               {tx.relativeTime || new Date(tx.timestamp).toLocaleString('ko-KR')}
-                             </p>
-                             {tx.tokenName && tx.tokenId && (
-                               <p className="text-xs text-gray-500">
-                                 {tx.tokenName} #{tx.tokenId} {tx.tokenSymbol && `(${tx.tokenSymbol})`}
-                               </p>
-                             )}
-                           </div>
-                         </div>
-                         <div className="text-right">
-                           <p className="text-sm font-mono text-gray-300">
-                             {tx.hash.substring(0, 6)}...{tx.hash.substring(tx.hash.length - 4)}
-                           </p>
-                           <a 
-                             href={`https://polygonscan.com/tx/${tx.hash}`}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                           >
-                             Polygonscan 보기
-                           </a>
-                         </div>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               )}
-             </div>
-              
-              
-            </div>
-          </div>
-        </div>
+      </div>
       
       {/* 경고 모달 */}
       <WarningModal

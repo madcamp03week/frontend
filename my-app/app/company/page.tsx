@@ -3,7 +3,8 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import SubscribeFooter from '../components/SubscribeFooter';
+import SubscribeFooter from '../../components/SubscribeFooter';
+import Navigation from '@/components/Navigation';
 
 export default function CompanyPage() {
   const features = [
@@ -29,18 +30,8 @@ export default function CompanyPage() {
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-gradient-to-br from-pink-500/20 to-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-      {/* 네비게이션 (훼손 금지) */}
-      <nav className="z-10 relative w-full flex justify-between items-center px-10 py-6">
-        <div className="text-2xl font-bold">
-          <Link href="/">Chronos</Link>
-        </div>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/artist">Artist</Link>
-          <Link href="/wallet">Wallet</Link>
-        </div>
-      </nav>
+      {/* 네비게이션 */}
+      <Navigation />
 
       {/* Hero Section */}
       <section className="relative z-10 text-center py-20 px-6 md:px-12">

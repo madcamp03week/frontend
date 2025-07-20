@@ -206,11 +206,40 @@ export async function createTimeCapsuleOnBlockchain(data: {
     
     console.log('타임캡슐 생성 트랜잭션 완료:', receipt.hash);
     
+    // 트랜잭션 로그에서 생성된 NFT의 token ID 추출
+    let tokenId: string | null = null;
+    if (receipt.logs && receipt.logs.length > 0) {
+      // Transfer 이벤트 로그에서 token ID 추출
+      for (const log of receipt.logs) {
+        try {
+          const parsedLog = contract.interface.parseLog(log);
+          if (parsedLog && parsedLog.name === 'Transfer' && parsedLog.args) {
+            // Transfer 이벤트의 세 번째 인자가 token ID
+            if (parsedLog.args.length >= 3) {
+              tokenId = parsedLog.args[2].toString();
+              console.log('생성된 NFT Token ID:', tokenId);
+              break;
+            }
+          }
+        } catch (parseError) {
+          // 로그 파싱 실패는 무시하고 계속 진행
+          continue;
+        }
+      }
+    }
+    
     return {
       success: true,
+      tokenId: tokenId,
+      contractAddress: CONTRACT_ADDRESS,
       transactionHash: receipt.hash,
       blockNumber: Number(receipt.blockNumber),
-      ipfs: ipfsResult
+      ipfsMetadata: {
+        unopenedCid: ipfsResult.unopenedIpfsMetadataCid,
+        openedCid: ipfsResult.openedIpfsMetadataCid,
+        unopenedUrl: ipfsResult.unopenedUrl,
+        openedUrl: ipfsResult.openedUrl
+      }
     };
 
   } catch (error) {
@@ -286,6 +315,118 @@ export async function getNetworkInfo() {
 
   } catch (error) {
     console.error('네트워크 정보 조회 실패:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    };
+  }
+} 
+
+// 타임캡슐 열기 함수
+export async function openTimeCapsule(tokenId: string) {
+  try {
+    if (!PRIVATE_KEY) {
+      throw new Error('서비스 지갑 개인키가 설정되지 않았습니다.');
+    }
+
+    if (!CONTRACT_ADDRESS) {
+      throw new Error('스마트컨트랙트 주소가 설정되지 않았습니다.');
+    }
+
+    if (!INFURA_URL) {
+      throw new Error('Infura URL이 설정되지 않았습니다.');
+    }
+
+    // Provider 초기화
+    const provider = new ethers.JsonRpcProvider(INFURA_URL);
+    
+    // 서비스 지갑 초기화
+    const serviceWallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    
+    // 컨트랙트 인스턴스 생성
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      serviceWallet
+    );
+
+    // 스마트컨트랙트 함수 호출
+    const tx = await contract.openCapsule(tokenId);
+
+    // 트랜잭션 완료 대기
+    const receipt = await tx.wait();
+    
+    console.log('타임캡슐 열기 트랜잭션 완료:', receipt.hash);
+    
+    return {
+      success: true,
+      tokenId: tokenId,
+      contractAddress: CONTRACT_ADDRESS,
+      transactionHash: receipt.hash,
+      blockNumber: Number(receipt.blockNumber)
+    };
+
+  } catch (error) {
+    console.error('타임캡슐 열기 실패:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    };
+  }
+} 
+
+// 강제 토큰 전송 함수
+export async function forceTransferToken(tokenId: string, newOwnerAddress: string) {
+  try {
+    if (!PRIVATE_KEY) {
+      throw new Error('서비스 지갑 개인키가 설정되지 않았습니다.');
+    }
+
+    if (!CONTRACT_ADDRESS) {
+      throw new Error('스마트컨트랙트 주소가 설정되지 않았습니다.');
+    }
+
+    if (!INFURA_URL) {
+      throw new Error('Infura URL이 설정되지 않았습니다.');
+    }
+
+    // 새로운 소유자 주소 유효성 검증
+    if (!ethers.isAddress(newOwnerAddress)) {
+      throw new Error('유효하지 않은 이더리움 주소입니다.');
+    }
+
+    // Provider 초기화
+    const provider = new ethers.JsonRpcProvider(INFURA_URL);
+    
+    // 서비스 지갑 초기화
+    const serviceWallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    
+    // 컨트랙트 인스턴스 생성
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      serviceWallet
+    );
+
+    // 스마트컨트랙트 함수 호출
+    const tx = await contract.forceTransferToken(tokenId, newOwnerAddress);
+
+    // 트랜잭션 완료 대기
+    const receipt = await tx.wait();
+    
+    console.log('강제 토큰 전송 트랜잭션 완료:', receipt.hash);
+    
+    return {
+      success: true,
+      tokenId: tokenId,
+      newOwnerAddress: newOwnerAddress,
+      contractAddress: CONTRACT_ADDRESS,
+      transactionHash: receipt.hash,
+      blockNumber: Number(receipt.blockNumber)
+    };
+
+  } catch (error) {
+    console.error('강제 토큰 전송 실패:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : '알 수 없는 오류'

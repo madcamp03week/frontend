@@ -57,51 +57,6 @@ export const createTimeCapsuleOnChain = async (chronosData: {
   }
 };
 
-// 서비스 지갑 연결 상태 확인 (API를 통해 처리)
-export const checkServiceWalletConnection = async () => {
-  try {
-    const response = await fetch('/api/blockchain/wallet-info');
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('서비스 지갑 연결 확인 실패:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '알 수 없는 오류'
-    };
-  }
-};
-
-// 서비스 지갑 정보 조회 (API를 통해 처리)
-export const getServiceWalletInfo = async () => {
-  try {
-    const response = await fetch('/api/blockchain/wallet-info');
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('서비스 지갑 정보 조회 실패:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '알 수 없는 오류'
-    };
-  }
-};
-
-// 네트워크 정보 조회 (API를 통해 처리)
-export const getNetworkInfo = async () => {
-  try {
-    const response = await fetch('/api/blockchain/network-info');
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('네트워크 정보 조회 실패:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '알 수 없는 오류'
-    };
-  }
-};
-
 // 초기화 실행
 if (typeof window !== 'undefined') {
   initializeBlockchain();

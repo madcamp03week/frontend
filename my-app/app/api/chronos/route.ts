@@ -23,7 +23,49 @@ export async function POST(request: NextRequest) {
     // 현재 사용자 정보 (실제로는 인증 미들웨어에서 가져와야 함)
     const userId = body.userId || 'anonymous';
     
-    // 타임캡슐 데이터 구성
+    // 사용자의 지갑 주소들 처리
+    let userWalletAddresses: string[] = [];
+    
+    // 클라이언트에서 전달받은 지갑 주소가 있으면 사용
+    if (walletAddresses && Array.isArray(walletAddresses) && walletAddresses.length > 0) {
+      userWalletAddresses = walletAddresses;
+      console.log('클라이언트에서 전달받은 지갑 주소들:', userWalletAddresses);
+    } else {
+      // 지갑 주소가 없으면 기본 주소 사용 (임시)
+      userWalletAddresses = ['0x38d41fd88833e17970128e91684cC9A0ec47D905'];
+      console.log('기본 지갑 주소 사용:', userWalletAddresses);
+    }
+
+    // 1️⃣ 먼저 블록체인에 타임캡슐 생성
+    let blockchainResult = null;
+    try {
+      blockchainResult = await createTimeCapsuleOnBlockchain({
+        name,
+        description: description || '',
+        openDate: openDate ? new Date(openDate) : null,
+        recipients: userWalletAddresses,
+        isTransferable: isTransferable !== undefined ? isTransferable : true,
+        isSmartContractTransferable: isSmartContractTransferable !== undefined ? isSmartContractTransferable : true,
+        isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true
+      });
+      
+      if (!blockchainResult.success) {
+        return NextResponse.json(
+          { error: '블록체인에 타임캡슐 생성에 실패했습니다.', details: blockchainResult.error },
+          { status: 500 }
+        );
+      }
+      
+      console.log('블록체인 생성 성공:', blockchainResult);
+    } catch (blockchainError) {
+      console.error('블록체인 생성 실패:', blockchainError);
+      return NextResponse.json(
+        { error: '블록체인에 타임캡슐 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    // 2️⃣ 블록체인 생성 성공 후 Firestore에 타임캡슐 저장
     const chronosData = {
       name,
       description: description || '',
@@ -40,52 +82,23 @@ export async function POST(request: NextRequest) {
       isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true,
       userId,
       createdAt: new Date(),
-      status: 'active' // active, opened, deleted
+      status: 'active', // active, opened, deleted
+      // 블록체인 정보 추가
+      tokenId: blockchainResult.tokenId,
+      contractAddress: blockchainResult.contractAddress,
+      transactionHash: blockchainResult.transactionHash,
+      blockNumber: blockchainResult.blockNumber,
+      ipfsMetadata: blockchainResult.ipfsMetadata
     };
 
     // Firestore에 타임캡슐 저장
     const chronosRef = collection(firestore, 'chronos');
     const docRef = await addDoc(chronosRef, chronosData);
 
-    // 사용자의 지갑 주소들 처리
-    let userWalletAddresses: string[] = [];
-    
-    // 클라이언트에서 전달받은 지갑 주소가 있으면 사용
-    if (walletAddresses && Array.isArray(walletAddresses) && walletAddresses.length > 0) {
-      userWalletAddresses = walletAddresses;
-      console.log('클라이언트에서 전달받은 지갑 주소들:', userWalletAddresses);
-    } else {
-      // 지갑 주소가 없으면 기본 주소 사용 (임시)
-      userWalletAddresses = ['0x38d41fd88833e17970128e91684cC9A0ec47D905'];
-      console.log('기본 지갑 주소 사용:', userWalletAddresses);
-    }
-
-    // 블록체인에 타임캡슐 생성 (함수 직접 호출)
-    let blockchainResult = null;
-    try {
-      blockchainResult = await createTimeCapsuleOnBlockchain({
-        name: chronosData.name,
-        description: chronosData.description,
-        openDate: chronosData.openDate,
-        recipients: userWalletAddresses,
-        isTransferable: chronosData.isTransferable,
-        isSmartContractTransferable: chronosData.isSmartContractTransferable,
-        isSmartContractOpenable: chronosData.isSmartContractOpenable
-      });
-      
-      if (blockchainResult.success) {
-        console.log('블록체인 생성 결과:', blockchainResult);
-      } else {
-        console.error('블록체인 생성 실패:', blockchainResult.error);
-      }
-    } catch (blockchainError) {
-      console.error('블록체인 생성 실패:', blockchainError);
-      // 블록체인 실패해도 DB 저장은 성공으로 처리
-    }
-
     return NextResponse.json({
       success: true,
       chronosId: docRef.id,
+      tokenId: blockchainResult.tokenId,
       message: '타임캡슐이 성공적으로 생성되었습니다.',
       data: {
         ...chronosData,

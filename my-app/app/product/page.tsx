@@ -20,7 +20,7 @@ export default function ProductPage() {
           transition={{ duration: 0.6 }}
           className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent"
         >
-Digital Time Capsule DApp
+          Decentralized Time Capsule
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -28,8 +28,8 @@ Digital Time Capsule DApp
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-lg text-gray-400 max-w-3xl mx-auto"
         >
-          소중한 추억을 IPFS에 안전하게 저장하고, 미래의 정해진 시점에 NFT로 받아보세요.<br></br>
-          블록체인 기술로 보장되는 완전한 보안과 자동화된 스마트 컨트랙트 시스템을 경험하세요.
+          IPFS에 안전하게 저장된 소중한 추억을 블록체인 NFT로 영구히 소장하세요.
+          미래의 특정 시점에 공개되도록 설정하여 특별한 순간을 더욱 의미있게 만들 수 있습니다.
         </motion.p>
       </section>
 
@@ -41,40 +41,34 @@ Digital Time Capsule DApp
           transition={{ duration: 0.6 }}
           className="max-w-4xl mx-auto text-center mb-12"
         >
-          <h2 className="text-3xl font-bold">핵심 기능</h2>
-          <p className="text-gray-400 mt-4">혁신적인 블록체인 기술로 구현한 타임캡슐 서비스</p>
+          <h2 className="text-3xl font-bold">주요 기능</h2>
+          <p className="text-gray-400 mt-4">분산 기술로 구현된 혁신적인 타임캡슐 서비스</p>
         </motion.div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
             { 
-              title: 'IPFS 보안 저장', 
-              desc: '사진, 비디오, 텍스트를 Filebase IPFS에 암호화하여 안전하게 저장합니다.',
-              icon: '🔒'
+              title: 'IPFS Encryption', 
+              desc: 'Securely store data on Filebase IPFS with end-to-end encryption for ultimate privacy.',
             },
             { 
-              title: '자동 NFT 발행', 
-              desc: '타임캡슐이 열리는 순간 스마트 컨트랙트가 자동으로 NFT를 발행하여 지갑으로 전송합니다.',
-              icon: '🎨'
+              title: 'Automated NFT Minting', 
+              desc: 'Smart contracts automatically mint and transfer NFTs upon time capsule release.',
             },
             { 
-              title: '맞춤형 오픈 일정', 
-              desc: '원하는 날짜와 시간을 정확히 설정하여 미래의 특별한 순간에 추억을 되찾으세요.',
-              icon: '⏰'
+              title: 'Precise Unlocking', 
+              desc: 'Set exact dates and times to reveal memories at the perfect moment in the future.',
             },
             { 
-              title: '이메일 알림', 
-              desc: '타임캡슐이 열릴 때 자동으로 이메일 알림을 받아 놓치지 않도록 합니다.',
-              icon: '📧'
+              title: 'Email Notifications', 
+              desc: 'Receive email alerts when time capsules are opened, ensuring no moment is missed.',
             },
             { 
-              title: '지갑 통합', 
-              desc: 'MetaMask 연결 또는 자체 지갑 생성으로 편리하게 시작할 수 있습니다.',
-              icon: '💳'
+              title: 'Wallet Integration', 
+              desc: 'Seamlessly connect with MetaMask or create a new wallet for easy access.',
             },
             { 
-              title: 'NFT 거래', 
-              desc: '생성된 타임캡슐을 열리기 전에도 NFT 형태로 거래할 수 있습니다.',
-              icon: '🔄'
+              title: 'NFT Marketplace', 
+              desc: 'Trade time capsule NFTs before they unlock, creating new opportunities.',
             },
           ].map((item, idx) => (
             <motion.div
@@ -82,9 +76,13 @@ Digital Time Capsule DApp
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 + idx * 0.1 }}
-              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300"
+              className="
+                bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 text-center
+                shadow-lg
+                hover:scale-105 hover:shadow-xl hover:shadow-purple-500/30
+                transition-all duration-300
+              "
             >
-              <div className="text-3xl mb-4">{item.icon}</div>
               <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
               <p className="text-gray-300 text-sm leading-relaxed">{item.desc}</p>
             </motion.div>

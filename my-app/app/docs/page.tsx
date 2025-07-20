@@ -3,7 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import SubscribeFooter from '../components/SubscribeFooter';
+import SubscribeFooter from '../../components/SubscribeFooter';
 
 export default function DocsPage() {
   const sections = [

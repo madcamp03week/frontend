@@ -1,14 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import MadeForSection from '@/app/components/MadeForSection'
-import SubscribeFooter from './components/SubscribeFooter';
+import MadeForSection from '@/components/MadeForSection'
+import SubscribeFooter from '../components/SubscribeFooter';
 import CompanyPage from './company/page';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navigation from '../components/Navigation';
+import Navigation from '@/components/Navigation';
 
 export default function Home() {
   const { user, loading, logout, userProfile, wallets, hasWallet, dataLoaded } = useAuth();

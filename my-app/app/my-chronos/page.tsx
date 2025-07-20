@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 
 export default function MyChronosPage() {
@@ -11,10 +11,13 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
   const [chronosList, setChronosList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [timeUntilNextRefresh, setTimeUntilNextRefresh] = useState(10);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   // 활성 지갑 주소
   const activeWallet = wallets.find(wallet => wallet.isActive);
-
 
   // 타임캡슐 목록 가져오기
   const fetchChronosList = async () => {
@@ -37,6 +40,7 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
       if (response.ok) {
         console.log('✅ 타임캡슐 목록 조회 성공:', result.data?.length || 0);
         setChronosList(result.data || []);
+        setLastRefresh(new Date());
       } else {
         console.error('❌ 타임캡슐 목록 조회 실패:', result.error);
       }
@@ -46,6 +50,43 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
       setLoading(false);
     }
   };
+
+  // 수동 새로고침 함수
+  const handleManualRefresh = () => {
+    fetchChronosList();
+    setTimeUntilNextRefresh(10);
+  };
+
+  // 자동 새로고침 설정
+  useEffect(() => {
+    if (user && activeWallet) {
+      // 10초마다 자동 새로고침
+      intervalRef.current = setInterval(() => {
+        fetchChronosList();
+        setTimeUntilNextRefresh(10);
+      }, 10000);
+
+      // 카운트다운 타이머
+      countdownRef.current = setInterval(() => {
+        setTimeUntilNextRefresh(prev => {
+          if (prev <= 1) {
+            return 10;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, [user, activeWallet]);
 
   // 컴포넌트 마운트 시 타임캡슐 목록 가져오기
   useEffect(() => {
@@ -108,7 +149,39 @@ const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
       {/* 메인 컨텐츠 */}
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">My Chronos</h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-4xl font-bold">My Chronos</h1>
+            <div className="flex items-center space-x-4">
+              {/* 새로고침 상태 표시 */}
+              <div className="flex items-center space-x-2 text-sm text-gray-400">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>자동 새로고침 활성화</span>
+                <span className="text-blue-400">
+                  ({timeUntilNextRefresh}초 후 새로고침)
+                </span>
+              </div>
+              
+              {/* 마지막 새로고침 시간 */}
+              <div className="text-xs text-gray-500">
+                마지막 업데이트: {lastRefresh.toLocaleTimeString('ko-KR')}
+              </div>
+            </div>
+          </div>
+          
+          {/* 새로고침 컨트롤 */}
+          <div className="flex items-center space-x-4 mb-4">
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+            >
+              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{loading ? '새로고침 중...' : '지금 새로고침'}</span>
+            </button>
+          </div>
+          
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
             <p className="text-gray-300">
               <span className="font-medium">내 지갑 주소:</span> {walletAddress}

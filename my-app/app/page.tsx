@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Navigation from '../components/Navigation';
 
 export default function Home() {
   const { user, loading, logout, userProfile, wallets, hasWallet, dataLoaded } = useAuth();
@@ -32,6 +32,9 @@ export default function Home() {
     }
   }, [user, loading, dataLoaded, hasWallet, router, wallets]);
 
+  // 사용자 로그인 상태 확인
+  const isUserLoggedIn = user;
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white font-sans relative overflow-hidden">
       {/* 배경 그라데이션 오브 */}
@@ -39,35 +42,10 @@ export default function Home() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
       
       {/* 네비게이션 */}
-      <nav className="w-full flex justify-between items-center px-10 py-6">
-       <Link href="/"><div className="text-2xl font-bold">
-         Chronos
-        </div></Link>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/new-chronos">New Chronos</Link>
-          <Link href="/my-chronos">My Chronos</Link>
-          {!loading && (
-            user ? (
-              <>
-                <Link href="/dashboard">Dashboard</Link>
-                <button
-                  onClick={logout}
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link href="/login">Login</Link>
-            )
-          )}
-        </div>
-      </nav>
+      <Navigation />
 
       {/* 로그인한 사용자 정보 섹션 */}
-      {user && showUserInfo && (
+      {isUserLoggedIn && showUserInfo && (
         <motion.section
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -127,7 +105,7 @@ export default function Home() {
       )}
 
       {/* 사용자 정보가 숨겨졌을 때 다시 보이게 하는 버튼 */}
-      {user && !showUserInfo && (
+      {isUserLoggedIn && !showUserInfo && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

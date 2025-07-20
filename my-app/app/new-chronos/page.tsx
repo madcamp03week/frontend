@@ -4,13 +4,27 @@
 // 만약 MyChronosPage에서 이 에러가 난다면, app/my-chronos/page.tsx 파일에서 useAuth 등 훅이 조건문/함수/루프 안에서 호출되고 있지 않은지 확인하세요.
 // 아래는 NewChronosPage에서 훅 순서가 올바른 예시입니다.
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 
+// localStorage에서 사용자 정보를 확인하는 함수
+const getCachedUserInfo = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const userProfile = localStorage.getItem('chronos_user_profile');
+    const wallets = localStorage.getItem('chronos_wallets');
+    return userProfile && wallets ? { userProfile: JSON.parse(userProfile), wallets: JSON.parse(wallets) } : null;
+  } catch (error) {
+    console.error('캐시된 사용자 정보 파싱 오류:', error);
+    return null;
+  }
+};
+
 export default function NewChronosPage() {
   // 모든 훅은 컴포넌트 최상단에서 한 번만 호출
-  const { user, wallets, userProfile, logout, createNewWallet } = useAuth();
+  const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading } = useAuth();
+  const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
@@ -36,6 +50,15 @@ export default function NewChronosPage() {
   const [isTransferable, setIsTransferable] = useState(true);
   const [isSmartContractTransferable, setIsSmartContractTransferable] = useState(true);
   const [isSmartContractOpenable, setIsSmartContractOpenable] = useState(true);
+
+  // 컴포넌트 마운트 시 캐시된 사용자 정보 확인
+  useEffect(() => {
+    setCachedUserInfo(getCachedUserInfo());
+  }, []);
+
+  // 사용자 로그인 상태 확인 (캐시된 정보 우선 사용)
+  const isUserLoggedIn = user || cachedUserInfo;
+  const shouldShowLoading = authLoading && !cachedUserInfo;
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -99,7 +122,7 @@ export default function NewChronosPage() {
   };
 
   // 로그인이 필요한 경우
-  if (!user) {
+  if (!isUserLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-indigo-900">
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-12 text-center shadow-2xl">
@@ -154,8 +177,8 @@ export default function NewChronosPage() {
           <Link href="/product">Product</Link>
           <Link href="/new-chronos">New Chronos</Link>
           <Link href="/my-chronos">My Chronos</Link>
-          {!loading && (
-            user ? (
+          {!shouldShowLoading && (
+            isUserLoggedIn ? (
               <>
                 <Link href="/dashboard">Dashboard</Link>
                 <button

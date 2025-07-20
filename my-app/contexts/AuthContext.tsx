@@ -17,6 +17,13 @@ import {
   type WalletData 
 } from '../lib/firestore';
 
+// localStorage 키 상수
+const STORAGE_KEYS = {
+  USER_PROFILE: 'chronos_user_profile',
+  WALLETS: 'chronos_wallets',
+  AUTH_STATE: 'chronos_auth_state'
+};
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -59,13 +66,69 @@ export const useAuth = () => {
   return context;
 };
 
+// localStorage 유틸리티 함수들
+const getStoredUserProfile = (): UserProfile | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+    if (!stored) return null;
+    const profile = JSON.parse(stored);
+    return {
+      ...profile,
+      createdAt: new Date(profile.createdAt),
+      updatedAt: new Date(profile.updatedAt),
+    };
+  } catch (error) {
+    console.error('저장된 사용자 프로필 파싱 오류:', error);
+    return null;
+  }
+};
+
+const getStoredWallets = (): WalletData[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.WALLETS);
+    if (!stored) return [];
+    const wallets = JSON.parse(stored);
+    return wallets.map((wallet: any) => ({
+      ...wallet,
+      createdAt: new Date(wallet.createdAt),
+      updatedAt: new Date(wallet.updatedAt),
+    }));
+  } catch (error) {
+    console.error('저장된 지갑 데이터 파싱 오류:', error);
+    return [];
+  }
+};
+
+const setStoredUserProfile = (profile: UserProfile | null) => {
+  if (typeof window === 'undefined') return;
+  if (profile) {
+    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+  }
+};
+
+const setStoredWallets = (wallets: WalletData[]) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify(wallets));
+};
+
+const clearStoredData = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+  localStorage.removeItem(STORAGE_KEYS.WALLETS);
+  localStorage.removeItem(STORAGE_KEYS.AUTH_STATE);
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [wallets, setWallets] = useState<WalletData[]>([]);
   const [shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false); // 데이터 로드 완료 상태 추가
+  const [dataLoaded, setDataLoaded] = useState(false);
   
   // 지갑 보유 여부 계산 (데이터가 로드된 후에만 계산)
   const hasWallet = dataLoaded ? wallets.some(wallet => wallet.isActive) : false;
@@ -104,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       
       setWallets([walletWithDates]);
+      setStoredWallets([walletWithDates]);
       
       console.log('OAuth 사용자를 위한 새로운 폴리곤 지갑이 생성되었습니다:', savedWallet.address);
       console.log('Private Key가 시스템 키로 암호화되어 저장되었습니다.');
@@ -123,6 +187,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         console.log('사용자 로그인 감지:', user.uid, user.email);
         setDataLoaded(false); // 새로운 사용자 로그인 시 데이터 로드 상태 초기화
+        
+        // 먼저 localStorage에서 캐시된 데이터를 로드하여 즉시 UI 업데이트
+        const cachedProfile = getStoredUserProfile();
+        const cachedWallets = getStoredWallets();
+        
+        if (cachedProfile && cachedWallets.length > 0) {
+          console.log('캐시된 데이터를 즉시 로드:', { 
+            profile: cachedProfile.displayName, 
+            walletsCount: cachedWallets.length 
+          });
+          setUserProfile(cachedProfile);
+          setWallets(cachedWallets);
+          setDataLoaded(true);
+        }
+        
         try {
           const [profile, userWallets] = await Promise.all([
             getUserProfile(user.uid),
@@ -134,11 +213,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             wallets: userWallets.map((w: WalletData) => ({ id: w.id, address: w.address, isActive: w.isActive }))
           });
           if (profile) {
-            setUserProfile({
+            const profileWithDates = {
               ...profile,
               createdAt: new Date(profile.createdAt),
               updatedAt: new Date(profile.updatedAt),
-            });
+            };
+            setUserProfile(profileWithDates);
+            setStoredUserProfile(profileWithDates);
           } else {
             // 프로필이 없는 경우 새로 생성 (OAuth 로그인 사용자 포함)
             console.log('사용자 프로필이 없습니다. 새로 생성합니다:', user.uid);
@@ -149,11 +230,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 displayName: user.displayName || undefined,
                 photoURL: user.photoURL || undefined,
               });
-              setUserProfile({
+              const profileWithDates = {
                 ...newProfile,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-              });
+              };
+              setUserProfile(profileWithDates);
+              setStoredUserProfile(profileWithDates);
               
               // OAuth 로그인 사용자의 경우 지갑 설정 페이지로 이동하도록 설정
               if (user.providerData.length > 0) {
@@ -165,11 +248,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
           
-          setWallets(userWallets.map(wallet => ({
+          const walletsWithDates = userWallets.map(wallet => ({
             ...wallet,
             createdAt: new Date(wallet.createdAt),
             updatedAt: new Date(wallet.updatedAt),
-          })));
+          }));
+          setWallets(walletsWithDates);
+          setStoredWallets(walletsWithDates);
           
           // OAuth 로그인 사용자이고 활성 지갑이 없는 경우 지갑 설정 페이지로 이동하도록 설정
           const activeWallets = userWallets.filter((wallet: WalletData) => wallet.isActive);
@@ -189,11 +274,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 displayName: user.displayName || undefined,
                 photoURL: user.photoURL || undefined,
               });
-              setUserProfile({
+              const profileWithDates = {
                 ...newProfile,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-              });
+              };
+              setUserProfile(profileWithDates);
+              setStoredUserProfile(profileWithDates);
               
               // OAuth 로그인 사용자의 경우 지갑 설정 페이지로 이동하도록 설정
               if (user.providerData.length > 0) {
@@ -209,6 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(null);
         setWallets([]);
         setDataLoaded(true); // 로그아웃 상태에서도 데이터 로드 완료 표시
+        clearStoredData(); // 로그아웃 시 캐시된 데이터 삭제
       }
       
       setLoading(false);
@@ -241,6 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatedAt: new Date(),
       };
       setUserProfile(profileWithDates);
+      setStoredUserProfile(profileWithDates);
       
       // 지갑 설정 페이지로 이동하도록 설정
       setShouldRedirectToWalletSetup(true);
@@ -310,6 +399,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('업데이트된 지갑 목록:', updatedWallets);
         return updatedWallets;
       });
+      setStoredWallets([
+        ...wallets.map(wallet => ({ ...wallet, isActive: false })),
+        walletWithDates
+      ]);
       
       // 지갑 생성 후 dataLoaded를 강제로 true로 설정하여 hasWallet 계산이 즉시 반영되도록 함
       setDataLoaded(true);
@@ -362,6 +455,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev.map(wallet => ({ ...wallet, isActive: false })),
         walletWithDates
       ]);
+      setStoredWallets([
+        ...wallets.map(wallet => ({ ...wallet, isActive: false })),
+        walletWithDates
+      ]);
 
       // 지갑 생성 후 dataLoaded를 강제로 true로 설정하여 hasWallet 계산이 즉시 반영되도록 함
       setDataLoaded(true);
@@ -381,6 +478,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await updateUserProfile(user.uid, { displayName });
       setUserProfile(prev => prev ? { ...prev, displayName, updatedAt: new Date() } : null);
+      setStoredUserProfile(userProfile ? { ...userProfile, displayName, updatedAt: new Date() } : null);
       console.log('닉네임이 성공적으로 업데이트되었습니다.');
     } catch (error) {
       console.error('닉네임 업데이트 중 오류:', error);
@@ -393,6 +491,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut(auth);
       setUserProfile(null);
       setWallets([]);
+      clearStoredData(); // 로그아웃 시 캐시된 데이터 삭제
     } catch (error) {
       console.error('로그아웃 중 오류가 발생했습니다:', error);
     }

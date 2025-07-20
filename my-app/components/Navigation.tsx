@@ -1,0 +1,63 @@
+'use client';
+
+import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
+
+// localStorage에서 사용자 정보를 확인하는 함수
+const getCachedUserInfo = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const userProfile = localStorage.getItem('chronos_user_profile');
+    const wallets = localStorage.getItem('chronos_wallets');
+    return userProfile && wallets ? { userProfile: JSON.parse(userProfile), wallets: JSON.parse(wallets) } : null;
+  } catch (error) {
+    console.error('캐시된 사용자 정보 파싱 오류:', error);
+    return null;
+  }
+};
+
+export default function Navigation() {
+  const { user, logout, loading: authLoading } = useAuth();
+  const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
+
+  // 컴포넌트 마운트 시 캐시된 사용자 정보 확인
+  useEffect(() => {
+    setCachedUserInfo(getCachedUserInfo());
+  }, []);
+
+  // 사용자 로그인 상태 확인 (캐시된 정보 우선 사용)
+  const isUserLoggedIn = user || cachedUserInfo;
+  const shouldShowLoading = authLoading && !cachedUserInfo;
+
+  return (
+    <nav className="w-full flex justify-between items-center px-10 py-6">
+      <Link href="/">
+        <div className="text-2xl font-bold">
+          Chronos
+        </div>
+      </Link>
+      <div className="space-x-8 text-sm text-gray-300 font-light">
+        <Link href="/company">Company</Link>
+        <Link href="/product">Product</Link>
+        <Link href="/new-chronos">New Chronos</Link>
+        <Link href="/my-chronos">My Chronos</Link>
+        {!shouldShowLoading && (
+          isUserLoggedIn ? (
+            <>
+              <Link href="/dashboard">Dashboard</Link>
+              <button
+                onClick={logout}
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link href="/login">Login</Link>
+          )
+        )}
+      </div>
+    </nav>
+  );
+} 

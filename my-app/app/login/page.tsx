@@ -22,11 +22,16 @@ export default function LoginPage() {
   const router = useRouter();
   const { signUp, signIn, shouldRedirectToWalletSetup, setShouldRedirectToWalletSetup, user, hasWallet, loading: authLoading, dataLoaded } = useAuth();
 
-  // 로그인한 사용자가 지갑이 없으면 자동으로 지갑 설정 페이지로 이동
+  // 로그인한 사용자가 이미 로그인되어 있으면 적절한 페이지로 리다이렉트
   useEffect(() => {
-    if (user && !authLoading && dataLoaded && !hasWallet) {
-      console.log('로그인 페이지: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
-      router.push('/wallet-setup');
+    if (user && !authLoading && dataLoaded) {
+      if (!hasWallet) {
+        console.log('로그인 페이지: 사용자가 지갑을 보유하지 않음. 지갑 설정 페이지로 이동합니다.');
+        router.push('/wallet-setup');
+      } else {
+        console.log('로그인 페이지: 이미 로그인된 사용자. 메인 페이지로 이동합니다.');
+        router.push('/');
+      }
     }
   }, [user, authLoading, dataLoaded, hasWallet, router]);
 

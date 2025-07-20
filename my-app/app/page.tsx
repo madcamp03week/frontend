@@ -84,7 +84,7 @@ export default function Home() {
               <div className="flex space-x-4">
                 <Link
                   href="/dashboard"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30 border border-blue-500/30 hover:border-blue-400/50 text-blue-300 hover:text-blue-200 rounded-md text-sm transition-all duration-300 backdrop-blur-sm"
                 >
                   대시보드 보기
                 </Link>
@@ -93,7 +93,7 @@ export default function Home() {
                     href={`https://polygonscan.com/address/${wallets.filter(wallet => wallet.isActive)[0].address}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-sm transition-colors"
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-md text-sm transition-all duration-300 backdrop-blur-sm"
                   >
                     Polyscan에서 확인하기
                   </a>
@@ -134,31 +134,18 @@ export default function Home() {
         </h1>
         <Link
           href="/new-chronos"
-          className="mt-8 inline-block px-8 py-3 rounded-full font-semibold text-lg transition-all shadow
-            bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500
-            hover:from-cyan-300 hover:via-blue-400 hover:to-purple-400
+          className="mt-8 inline-block px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 shadow-lg
+            bg-gradient-to-r from-cyan-400/60 via-blue-500/60 to-purple-500/60
+            hover:from-cyan-400/80 hover:via-blue-500/80 hover:to-purple-500/80
             text-white relative overflow-hidden
-            ring-2 ring-cyan-400/30 hover:ring-purple-400/40
-            before:absolute before:inset-0 before:bg-white/10 before:blur before:opacity-0 hover:before:opacity-100
-            animate-neon-glow"
-          style={{
-            boxShadow: '0 0 16px 2px #00fff0, 0 0 32px 4px #8f00ff44'
-          }}
+            border border-white/40 hover:border-white/60
+            backdrop-blur-sm hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/25"
         >
           <span className="relative z-10 tracking-wide flex items-center">
         
             Chrons 만들러 가기
           </span>
         </Link>
-        <style jsx>{`
-          .animate-neon-glow {
-            animation: neonGlow 2.5s infinite alternate;
-          }
-          @keyframes neonGlow {
-            0% { box-shadow: 0 0 8px #00fff0, 0 0 16px #8f00ff; }
-            100% { box-shadow: 0 0 24px #00fff0, 0 0 48px #8f00ff; }
-          }
-        `}</style>
       </section>
       
 

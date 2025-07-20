@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -21,6 +22,7 @@ export default function Navigation() {
   const { user, logout, loading: authLoading } = useAuth();
   const [cachedUserInfo, setCachedUserInfo] = useState<any>(null);
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   // 클라이언트 사이드 렌더링 확인
   useEffect(() => {
@@ -47,7 +49,14 @@ export default function Navigation() {
             <>
               <Link href="/dashboard">Dashboard</Link>
               <button
-                onClick={logout}
+                onClick={async () => {
+                  try {
+                    await logout();
+                    router.push('/');
+                  } catch (error) {
+                    console.error('로그아웃 중 오류:', error);
+                  }
+                }}
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 Logout

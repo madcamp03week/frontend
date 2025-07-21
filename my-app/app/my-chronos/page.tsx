@@ -35,6 +35,52 @@ export default function MyChronosPage() {
   const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const [transferingId, setTransferingId] = useState<string | null>(null);
+  const [transferError, setTransferError]   = useState<string | null>(null);
+  const [transferResult, setTransferResult] = useState<string | null>(null);
+  const activeWallet = (cachedUserInfo?.wallets || wallets).find(
+    (w: any) => w.isActive
+  );
+// 페이지 상단에 선언되어 있는 handleTransfer
+const handleTransfer = async (
+  tokenId: string,
+  contractAddress: string,
+  toAddress: string       // ← 추가
+) => {
+  if (!toAddress) {
+    setTransferError('보내는 주소를 입력해주세요.');
+    return;
+  }
+  setTransferingId(tokenId);
+  setTransferError(null);
+  setTransferResult(null);
+
+  try {
+    const res = await fetch('/api/my-chronos/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromAddress,             // 서비스 지갑 또는 activeWallet.address
+        toAddress,               // 지금 입력받은 대상 주소
+        tokenId,
+        contractAddress
+      })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || '전송 실패');
+    setTransferResult(json.txHash);
+  } catch (err: any) {
+    setTransferError(err.message);
+  } finally {
+    setTransferingId(null);
+  }
+};
+const [fromAddress, setFromAddress] = useState<string>('');
+
+useEffect(() => {
+   if (activeWallet?.address) {
+     setFromAddress(activeWallet.address);   }
+ }, [activeWallet]);
 
   // 클라이언트 사이드 렌더링 확인
   useEffect(() => {
@@ -53,7 +99,6 @@ export default function MyChronosPage() {
   const shouldShowLoading = isClient && authLoading && !cachedUserInfo && !userProfile && !user;
 
   // 활성 지갑 주소 - localStorage 우선 사용
-  const activeWallet = (cachedUserInfo?.wallets || wallets).find((wallet: any) => wallet.isActive);
 
   // 타임캡슐 목록 가져오기
   const fetchChronosList = async () => {
@@ -465,11 +510,40 @@ export default function MyChronosPage() {
                         보기
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <button className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white rounded-xl transition-all duration-300 text-sm shadow-lg hover:shadow-white/10">
-                        전송
-                      </button>
-                    </td>
+                    {/* 전송 버튼 칸 */}
+        <td className="px-6 py-4">
+       <button
+         onClick={() => {
+      // 클릭 시 주소 입력창 띄우기
+      const to = window.prompt('전송할 지갑 주소를 입력하세요', '');
+      if (!to) return;
+      // 입력한 주소가 있으면 실제 전송 함수 호출
+      handleTransfer(
+        chronos.tokenId,
+        chronos.contractAddress,
+        to.trim()
+      );
+    }}
+    disabled={transferingId === chronos.tokenId}
+    className={`px-4 py-2 rounded-xl text-sm transition-all duration-200 ${
+      transferingId === chronos.tokenId
+        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+        : 'bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white'
+    }`}
+  >
+    {transferingId === chronos.tokenId ? '전송중…' : '전송'}
+  </button>
+
+  {transferError && transferingId === chronos.tokenId && (
+    <p className="mt-1 text-xs text-red-400">❌ {transferError}</p>
+  )}
+
+  {transferResult && transferingId !== chronos.tokenId && (
+    <p className="mt-1 text-xs text-green-300">✔︎ {transferResult.slice(0,10)}…</p>
+    )}
+      </td>
+
+
                     <td className="px-6 py-4">
                       <a 
                         href={chronos.permalink}

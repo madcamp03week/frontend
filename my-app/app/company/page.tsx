@@ -169,7 +169,7 @@ export default function CompanyPage() {
           함께 크립토·디지털 미래를 만들어갈 당신을 기다립니다.
         </motion.p>
         <Link
-          href="/careers"
+          href="/"
           className="
             inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full font-semibold shadow-lg
             transition-transform transform

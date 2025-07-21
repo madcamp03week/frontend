@@ -6,6 +6,7 @@ import Link from 'next/link';
 import SubscribeFooter from '../../components/SubscribeFooter';
 import Navigation from '../../components/Navigation';
 
+
 export default function ProductPage() {
   return (
     <main className="min-h-screen bg-black text-white font-sans">
@@ -31,6 +32,37 @@ export default function ProductPage() {
           IPFS에 안전하게 저장된 소중한 추억을 블록체인 NFT로 영구히 소장하세요.
           미래의 특정 시점에 공개되도록 설정하여 특별한 순간을 더욱 의미있게 만들 수 있습니다.
         </motion.p>
+      </section>
+
+      {/* Product Description Section */}
+      <section className="py-16 px-6 md:px-12 bg-gray-900">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mx-auto text-center"
+        >
+          <h2 className="text-3xl font-bold mb-4">⏳ 디지털 타임캡슐</h2>
+          <p className="text-gray-300 leading-relaxed">
+            지금 이 순간의 감정, 생각, 그리고 추억을 미래의 나에게 남기고 싶었던 적 있나요?
+            디지털 타임캡슐은 사진, 영상, 텍스트를 담아 블록체인 기반 NFT로 영구 보관하고, 정해진 미래의 시간에만 열어볼 수 있도록 만들어진 특별한 서비스입니다.
+          </p>
+          <p className="text-gray-300 leading-relaxed mt-4">
+            <b>🌐 완전한 소유권과 보안</b><br />
+            타임캡슐은 NFT로 발행되어 오직 본인만 열람할 수 있고, IPFS 분산 저장 기술로 안전하게 보관됩니다. 영구적으로 변조 불가능한 형태로 기록되며, 블록체인 위에서 존재하는 진짜 당신의 이야기입니다.
+          </p>
+          <p className="text-gray-300 leading-relaxed mt-4">
+            <b>⏰ 열람 시간 지정</b><br />
+            미래의 특정 날짜와 시간에만 열람 가능하게 설정할 수 있습니다. 졸업식, 입사 5주년, 결혼기념일 등 당신만의 의미 있는 날에 다시 열어보세요.
+          </p>
+          <p className="text-gray-300 leading-relaxed mt-4">
+            <b>✉️ 미래를 위한 선물</b><br />
+            자신에게, 혹은 소중한 사람에게 편지나 영상을 남겨보세요. 시간이 지나 열람할 때, 그 감동은 상상 이상일 것입니다.
+          </p>
+          <p className="text-gray-300 italic mt-8">
+            "기억은 사라지지만, 기록은 남습니다. 디지털 타임캡슐과 함께, 당신의 시간을 저장하세요."
+          </p>
+        </motion.div>
       </section>
 
       {/* Key Features Section */}

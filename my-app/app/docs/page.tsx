@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import SubscribeFooter from '../../components/SubscribeFooter';
+import Navigation from '@/components/Navigation';
 
 export default function DocsPage() {
   const sections = [
@@ -15,19 +16,8 @@ export default function DocsPage() {
 
   return (
     <main className="min-h-screen bg-black text-white font-sans overflow-hidden px-6 md:px-12 py-16">
-      {/* 네비게이션 (기존 nav에만 Docs 추가) */}
-      <nav className="w-full flex justify-between items-center mb-12">
-        <div className="text-2xl font-bold">
-          <Link href="/">Chronos</Link>
-        </div>
-        <div className="space-x-8 text-sm text-gray-300 font-light">
-          <Link href="/company">Company</Link>
-          <Link href="/product">Product</Link>
-          <Link href="/artist">Artist</Link>
-          <Link href="/wallet">Wallet</Link>
-          <Link href="/docs" className="text-cyan-400 hover:text-cyan-200 transition">Docs</Link>
-        </div>
-      </nav>
+  {/*navigation */}
+  <Navigation />
 
       {/* Hero */}
       <section className="text-center mb-16">

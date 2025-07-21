@@ -38,6 +38,10 @@ export async function uploadIPFSMetadata(chronosData: {
     if (chronosData.encryptedFiles && Array.isArray(chronosData.encryptedFiles)) {
       for (const file of chronosData.encryptedFiles) {
         console.log('file:', file);
+        // base64 길이 및 패딩 여부 로그 추가
+        const base64Length = file.encryptedData.length;
+        const hasPadding = file.encryptedData.endsWith('=') || file.encryptedData.endsWith('==');
+        console.log(`[IPFS 업로드] 파일명: ${file.fileName}, base64 길이: ${base64Length}, 패딩 포함 여부: ${hasPadding}`);
         const buffer = Buffer.from(file.encryptedData, 'base64');
         const fileKey = `chronos_file_${Date.now()}_${file.fileName}`;
         const uploadResult = await s3.upload({

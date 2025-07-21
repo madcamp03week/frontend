@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     console.log('isEncrypted:', chronosData.isEncrypted);
     console.log('uploadedFileInfos:', chronosData.uploadedFileInfos);
     // 실제로는 반환하지 않고 204 No Content
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json(chronosData, { status: 200 });
   } catch (e: any) {
     console.error(e);
     return new NextResponse('Internal Server Error', { status: 500 });

@@ -158,8 +158,8 @@ export default function NewChronosPage() {
             });
             allFiles.push({
               encryptedData: encryptedContent.encryptedData,
-              fileName: encryptedContent.fileName,
-              originalName: 'content.txt',
+              fileName: 'encrypted_content',
+              originalName: 'encrypted_content',
               fileSize: contentFileObj.size,
               fileType: 'text/plain',
               isEncrypted: true
@@ -190,8 +190,8 @@ export default function NewChronosPage() {
               });
               return {
                 encryptedData: result.encryptedData,
-                fileName: result.fileName,
-                originalName: file.name,
+                fileName: 'encrypted_file',
+                originalName: 'encrypted_file',
                 fileSize: file.size,
                 fileType: file.type,
                 isEncrypted: true

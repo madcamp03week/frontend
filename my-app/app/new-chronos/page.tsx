@@ -237,7 +237,19 @@ export default function NewChronosPage() {
           name,
           description,
           content,
-          openDate: (document.getElementById('openDate') as HTMLInputElement)?.value || null,
+          openDate: (() => {
+            const dateInput = document.getElementById('openDate') as HTMLInputElement;
+            const timeInput = document.getElementById('openTime') as HTMLInputElement;
+            if (dateInput?.value && timeInput?.value) {
+              // KST로 입력된 값을 UTC로 변환
+              const kstString = `${dateInput.value}T${timeInput.value}`;
+              const kstDate = new Date(kstString);
+              // KST → UTC: KST는 UTC+9이므로 9시간 빼기
+              const utcDate = new Date(kstDate.getTime() - 9 * 60 * 60 * 1000);
+              return utcDate.toISOString(); // 항상 Z(UTC)로 끝남
+            }
+            return null;
+          })(),
           isEncrypted,
           password: isEncrypted ? password : null,
           isPublic,
@@ -365,7 +377,19 @@ export default function NewChronosPage() {
         name,
         description,
         content,
-        openDate: (document.getElementById('openDate') as HTMLInputElement)?.value || null,
+        openDate: (() => {
+          const dateInput = document.getElementById('openDate') as HTMLInputElement;
+          const timeInput = document.getElementById('openTime') as HTMLInputElement;
+          if (dateInput?.value && timeInput?.value) {
+            // KST로 입력된 값을 UTC로 변환
+            const kstString = `${dateInput.value}T${timeInput.value}`;
+            const kstDate = new Date(kstString);
+            // KST → UTC: KST는 UTC+9이므로 9시간 빼기
+            const utcDate = new Date(kstDate.getTime() - 9 * 60 * 60 * 1000);
+            return utcDate.toISOString(); // 항상 Z(UTC)로 끝남
+          }
+          return null;
+        })(),
         isEncrypted,
         password: isEncrypted ? password : null,
         isPublic,
@@ -506,12 +530,137 @@ export default function NewChronosPage() {
                 열기 날짜 *
               </label>
             </div>
-            <input
-              id="openDate"
-              type="datetime-local"
-              required
-              className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300"
-            />
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="openDate" className="block text-sm font-medium mb-2 text-gray-300">
+                    날짜
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="openDate"
+                      type="date"
+                      required
+                      defaultValue={(() => {
+                        const now = new Date();
+                        const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+                        return kst.toISOString().slice(0, 10);
+                      })()}
+                      className="w-full px-4 py-3 pr-12 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-12 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:text-white [&::-webkit-datetime-edit-fields-wrapper]:text-white [&::-webkit-datetime-edit-text]:text-white [&::-webkit-datetime-edit-month-field]:text-white [&::-webkit-datetime-edit-day-field]:text-white [&::-webkit-datetime-edit-year-field]:text-white"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="openTime" className="block text-sm font-medium mb-2 text-gray-300">
+                    시간 (24시간 형식)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="openTime"
+                      type="time"
+                      step="60"
+                      required
+                      defaultValue={(() => {
+                        const now = new Date();
+                        const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+                        return kst.toISOString().slice(11, 16);
+                      })()}
+                      className="w-full px-4 py-3 pr-12 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-12 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:text-white [&::-webkit-datetime-edit-fields-wrapper]:text-white [&::-webkit-datetime-edit-text]:text-white [&::-webkit-datetime-edit-hour-field]:text-white [&::-webkit-datetime-edit-minute-field]:text-white"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
+                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
+                    if (dateInput.value && timeInput.value) {
+                      const currentDate = new Date(dateInput.value);
+                      currentDate.setDate(currentDate.getDate() + 1);
+                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      // 시간은 그대로 유지
+                    }
+                  }}
+                  className="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 text-sm"
+                >
+                  +1일
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
+                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
+                    if (dateInput.value && timeInput.value) {
+                      const currentDate = new Date(dateInput.value);
+                      currentDate.setMonth(currentDate.getMonth() + 1);
+                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      // 시간은 그대로 유지
+                    }
+                  }}
+                  className="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 text-sm"
+                >
+                  +1달
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
+                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
+                    if (dateInput.value && timeInput.value) {
+                      const currentDate = new Date(dateInput.value);
+                      currentDate.setFullYear(currentDate.getFullYear() + 1);
+                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      // 시간은 그대로 유지
+                    }
+                  }}
+                  className="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 text-sm"
+                >
+                  +1년
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
+                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
+                    if (dateInput.value && timeInput.value) {
+                      const currentDate = new Date(dateInput.value);
+                      currentDate.setFullYear(currentDate.getFullYear() + 10);
+                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      // 시간은 그대로 유지
+                    }
+                  }}
+                  className="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 text-sm"
+                >
+                  +10년
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
+                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
+                    const now = new Date();
+                    const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+                    dateInput.value = kst.toISOString().slice(0, 10);
+                    timeInput.value = kst.toISOString().slice(11, 16);
+                  }}
+                  className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-300 hover:text-cyan-200 rounded-lg transition-all duration-300 text-sm"
+                >
+                  지금 시각
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* 설명 */}
@@ -652,11 +801,20 @@ export default function NewChronosPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required={isEncrypted}
-                  className="w-full px-4 py-3 bg-black/30 border border-purple-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white placeholder-gray-400 transition-all duration-300"
+                  className={`w-full px-4 py-3 bg-black/30 border rounded-xl focus:outline-none focus:ring-2 text-white placeholder-gray-400 transition-all duration-300 ${
+                    password.length > 0 && password.length < 6
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500/50'
+                      : 'border-purple-500/30 focus:ring-purple-500 focus:border-purple-500/50'
+                  }`}
                   placeholder="타임캡슐을 열 때 사용할 비밀번호를 입력하세요"
                 />
+                {password.length > 0 && password.length < 6 && (
+                  <p className="text-sm text-red-400 mt-2">
+                    비밀번호는 최소 6자리 이상이어야 합니다.
+                  </p>
+                )}
                 <p className="text-sm text-purple-200 mt-2">
-                  타임캡슐은 aes-256을 사용하여 암호화됩니다. 비밀번호를 잊어버리면 타임캡슐의 내용을 볼 수 없습니다.
+                  타임캡슐은 XChaCha20을 사용하여 암호화됩니다. 비밀번호를 잊어버리면 타임캡슐의 내용을 볼 수 없습니다.
                 </p>
               </div>
             )}

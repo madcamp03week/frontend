@@ -35,7 +35,7 @@ export default function PrivateKeyDisplayModal({
     setError('');
 
     try {
-      const decrypted = decryptPrivateKeyWithPassword(encryptedPrivateKey, password);
+      const decrypted = await decryptPrivateKeyWithPassword(encryptedPrivateKey, password);
       
       // userMade가 true인 경우에만 지갑 주소 검증
       if (userMade) {

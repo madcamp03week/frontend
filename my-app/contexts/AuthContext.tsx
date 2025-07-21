@@ -168,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newWallet = createPolygonWallet();
       
       // Private Key 암호화 (시스템 키만 사용)
-      const encryptedPrivateKey = encryptPrivateKey(newWallet.privateKey);
+      const encryptedPrivateKey = await encryptPrivateKey(newWallet.privateKey);
       
       // Firestore에 지갑 정보 저장 (암호화된 Private Key 포함)
       const savedWallet = await saveWalletData({
@@ -452,7 +452,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newWallet = createPolygonWallet();
 
       // Private Key 암호화 (사용자 비밀번호로 암호화)
-      const encryptedPrivateKey = encryptPrivateKeyWithPassword(newWallet.privateKey, password);
+      const encryptedPrivateKey = await encryptPrivateKeyWithPassword(newWallet.privateKey, password);
 
       // Firestore에 지갑 정보 저장 (암호화된 Private Key 포함)
       const savedWallet = await saveWalletData({

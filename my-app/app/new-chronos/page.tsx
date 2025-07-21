@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginRequired from '../../components/LoginRequired';
 import Navigation from '../../components/Navigation';
+import { encryptFile } from '../../lib/crypto';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -23,6 +24,9 @@ const getCachedUserInfo = () => {
     return null;
   }
 };
+
+// 파일 크기 제한 (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 export default function NewChronosPage() {
   // 모든 훅은 컴포넌트 최상단에서 한 번만 호출
@@ -45,6 +49,7 @@ export default function NewChronosPage() {
   const [tags, setTags] = useState('');
   const [manualAddress, setManualAddress] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [encryptedFiles, setEncryptedFiles] = useState<Array<{ encryptedData: string; fileName: string; originalName: string }>>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const toastTimeout = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,6 +73,56 @@ export default function NewChronosPage() {
     setToast({ message, type });
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     toastTimeout.current = setTimeout(() => setToast(null), 2500);
+  };
+
+  // 파일 크기 검증
+  const validateFileSize = (file: File): boolean => {
+    if (file.size > MAX_FILE_SIZE) {
+      showToast(`파일 크기가 너무 큽니다. 최대 ${MAX_FILE_SIZE / 1024 / 1024}MB까지 업로드 가능합니다.`, 'error');
+      return false;
+    }
+    return true;
+  };
+
+  // 파일 암호화 처리
+  const handleFileEncryption = async (files: File[]) => {
+    const validFiles = files.filter(validateFileSize);
+    
+    if (validFiles.length === 0) return;
+
+    setLoading(true);
+    try {
+      const encryptionPromises = validFiles.map(async (file) => {
+        try {
+          // 타임캡슐 암호화 비밀번호 사용 (없으면 기본값 사용)
+          const encryptionPassword = isEncrypted ? password : 'chronos_default_encryption';
+          const result = await encryptFile(file, encryptionPassword);
+          return {
+            ...result,
+            originalName: file.name
+          };
+        } catch (error) {
+          console.error(`파일 ${file.name} 암호화 실패:`, error);
+          showToast(`파일 ${file.name} 암호화에 실패했습니다.`, 'error');
+          return null;
+        }
+      });
+
+      const results = await Promise.all(encryptionPromises);
+      const successfulResults = results.filter(result => result !== null);
+      
+      setEncryptedFiles(prev => [...prev, ...successfulResults]);
+      setAttachments(prev => [...prev, ...validFiles]);
+      
+      if (successfulResults.length > 0) {
+        showToast(`${successfulResults.length}개 파일이 성공적으로 암호화되었습니다.`, 'success');
+      }
+    } catch (error) {
+      console.error('파일 암호화 처리 오류:', error);
+      showToast('파일 암호화 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,7 +151,8 @@ export default function NewChronosPage() {
         isSmartContractTransferable,
         isSmartContractOpenable,
         userId: user?.uid || 'anonymous',
-        walletAddresses: userWalletAddresses
+        walletAddresses: userWalletAddresses,
+        encryptedFiles: encryptedFiles // 암호화된 파일 데이터 추가
       };
 
       // API 호출
@@ -257,7 +313,7 @@ export default function NewChronosPage() {
                   accept="image/*,video/*,.pdf,.doc,.docx,.txt,.mp3,.mp4"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
-                    setAttachments(prev => [...prev, ...files]);
+                    handleFileEncryption(files);
                   }}
                   className="hidden"
                 />
@@ -286,10 +342,14 @@ export default function NewChronosPage() {
                         </svg>
                         <span className="text-white text-sm">{file.name}</span>
                         <span className="text-gray-300 text-xs">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <span className="text-green-400 text-xs">✓ 암호화됨</span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                        onClick={() => {
+                          setAttachments(prev => prev.filter((_, i) => i !== index));
+                          setEncryptedFiles(prev => prev.filter((_, i) => i !== index));
+                        }}
                         className="text-red-400 hover:text-red-300 transition-colors p-1 hover:bg-red-500/20 rounded-lg"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

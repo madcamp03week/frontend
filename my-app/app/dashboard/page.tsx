@@ -286,7 +286,7 @@ export default function DashboardPage() {
       <Navigation />
 
       {/* 메인 컨텐츠 */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <div className="mb-12">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent animate-pulse">
             대시보드
@@ -535,7 +535,7 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <h3 className="text-xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
-                      내 토큰
+                      잔고
                     </h3>
                   </div>
 
@@ -546,15 +546,15 @@ export default function DashboardPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                       {/* 내 CHRONOS 토큰 */}
-                      <div className="backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10">
-                        <p className="text-sm text-gray-300 mb-2">보유 CHRONOS</p>
+                      <div className="backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10 h-full">
+                        <p className="text-sm text-gray-300 mb-2">보유 토큰</p>
                         <p className="text-3xl font-bold text-white">
-                          {tokenBalance.toLocaleString()} <span className="text-lg text-gray-400">CHR</span>
+                          {tokenBalance.toLocaleString()} <span className="text-lg text-gray-400">CR</span>
                         </p>
                       </div>
 
                       {/* 변환된 POL */}
-                      <div className="backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10">
+                      <div className="backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10 h-full">
                         <p className="text-sm text-gray-300 mb-2">예상 POL</p>
                         <p className="text-3xl font-bold text-cyan-300">
                           {polBalance} <span className="text-lg text-gray-400">POL</span>

@@ -26,13 +26,50 @@ async function uploadIPFSMetadata(chronosData: {
   name: string;
   description: string;
   openDate: Date | null;
+  isEncrypted: boolean;
+  encryptedFiles?: Array<{
+    encryptedData: string;
+    fileName: string;
+    originalName: string;
+    fileSize: number;
+    fileType: string;
+    isEncrypted: boolean;
+  }>;
 }): Promise<{
   unopenedIpfsMetadataCid: string | null;
   openedIpfsMetadataCid: string | null;
   unopenedUrl: string;
   openedUrl: string;
+  uploadedFileInfos: Array<{ name: string; type: string; size: number; isEncrypted: boolean; ipfsUrl: string }>;
 }> {
   try {
+    // 파일 업로드 (encryptedFiles)
+    let uploadedFileInfos: Array<{ name: string; type: string; size: number; isEncrypted: boolean; ipfsUrl: string }> = [];
+    if (chronosData.encryptedFiles && Array.isArray(chronosData.encryptedFiles)) {
+      for (const file of chronosData.encryptedFiles) {
+        // 파일을 Buffer로 변환
+        const buffer = Buffer.from(file.encryptedData, 'base64');
+        const fileKey = `chronos_file_${Date.now()}_${file.fileName}`;
+        const uploadResult = await s3.upload({
+          Bucket: bucketName,
+          Key: fileKey,
+          Body: buffer,
+          ContentType: file.fileType || 'application/octet-stream'
+        }).promise();
+        // CID 추출 (Filebase는 CID를 메타데이터로 제공)
+        const head = await s3.headObject({ Bucket: bucketName, Key: fileKey }).promise();
+        const cid = head.Metadata?.cid || null;
+        const ipfsUrl = cid ? `ipfs://${cid}` : uploadResult.Location;
+        uploadedFileInfos.push({
+          name: file.originalName || file.fileName,
+          type: file.fileType,
+          size: file.fileSize,
+          isEncrypted: file.isEncrypted,
+          ipfsUrl
+        });
+      }
+    }
+
     // 열리지 않은 메타데이터
     const unopenedMetadata = {
       name: `${chronosData.name} (Unopened)`,
@@ -42,10 +79,15 @@ async function uploadIPFSMetadata(chronosData: {
         { 
           trait_type: "Open Date", 
           value: chronosData.openDate ? chronosData.openDate.toISOString() : "Never" 
+        },
+        {
+          trait_type: "isEncrypted",
+          value: chronosData.isEncrypted
         }
       ],
       properties: {
-        contentTypes: []
+        contentTypes: [],
+        // 파일 정보는 unopened에는 포함하지 않음
       }
     };
 
@@ -58,10 +100,15 @@ async function uploadIPFSMetadata(chronosData: {
         { 
           trait_type: "Open Date", 
           value: chronosData.openDate ? chronosData.openDate.toISOString() : "Never" 
+        },
+        {
+          trait_type: "isEncrypted",
+          value: chronosData.isEncrypted
         }
       ],
       properties: {
-        contentTypes: []
+        contentTypes: [],
+        data: uploadedFileInfos // 업로드된 파일 정보(ipfsUrl 등)
       }
     };
 
@@ -113,7 +160,8 @@ async function uploadIPFSMetadata(chronosData: {
       unopenedIpfsMetadataCid: unopenedCid,
       openedIpfsMetadataCid: openedCid,
       unopenedUrl: unopenedResult.Location,
-      openedUrl: openedResult.Location
+      openedUrl: openedResult.Location,
+      uploadedFileInfos
     };
 
   } catch (error) {
@@ -131,9 +179,18 @@ export async function createTimeCapsuleOnBlockchain(data: {
   isTransferable?: boolean;
   isSmartContractTransferable?: boolean;
   isSmartContractOpenable?: boolean;
+  isEncrypted?: boolean;
+  encryptedFiles?: Array<{
+    encryptedData: string;
+    fileName: string;
+    originalName: string;
+    fileSize: number;
+    fileType: string;
+    isEncrypted: boolean;
+  }>;
 }) {
   try {
-    const { name, description, openDate, recipients, isTransferable = true, isSmartContractTransferable = true, isSmartContractOpenable = true } = data;
+    const { name, description, openDate, recipients, isTransferable = true, isSmartContractTransferable = true, isSmartContractOpenable = true, isEncrypted = false, encryptedFiles = [] } = data;
     
     // 기본 recipients 설정
     const defaultRecipients = [
@@ -163,11 +220,13 @@ export async function createTimeCapsuleOnBlockchain(data: {
       throw new Error('스마트컨트랙트 주소가 설정되지 않았습니다.');
     }
 
-    // IPFS 메타데이터 업로드
+    // IPFS 메타데이터 및 파일 업로드
     const ipfsResult = await uploadIPFSMetadata({
       name,
       description,
-      openDate: openDate ? new Date(openDate) : null
+      openDate: openDate ? new Date(openDate) : null,
+      isEncrypted,
+      encryptedFiles
     });
 
     // Provider 초기화

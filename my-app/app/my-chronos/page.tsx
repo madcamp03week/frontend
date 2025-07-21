@@ -694,166 +694,209 @@ useEffect(() => {
           )}
         </div>
 {showTransferModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center">
-    <div
-      className="absolute inset-0 bg-black/40 backdrop-blur-md"
-      onClick={() => setShowTransferModal(false)}
-    />
-    <div className="relative z-10 bg-black/80 rounded-2xl p-8 w-full max-w-sm text-center space-y-4">
-      <h3 className="text-white text-xl font-bold">Chronos 전송</h3>
-
-      {/* ① 주소 vs 이메일 선택 */}
-      <div className="flex justify-center space-x-4 mb-4 text-sm text-white">
-        <label className="space-x-2">
-          <input
-            type="radio"
-            checked={!sendByEmail}
-            onChange={() => setSendByEmail(false)}
-          />
-          <span>지갑 주소</span>
-        </label>
-        <label className="space-x-2">
-          <input
-            type="radio"
-            checked={sendByEmail}
-            onChange={() => setSendByEmail(true)}
-          />
-          <span>이메일</span>
-        </label>
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    {/* 그라데이션 테두리 */}
+    <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-black/80 to-indigo-900/80 backdrop-blur-xl" onClick={() => setShowTransferModal(false)} />
+    <div className="relative max-w-lg w-full mx-4 p-1">
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-indigo-500/30 p-[3px]">
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/40 via-purple-500/40 to-indigo-500/40 animate-pulse"></div>
       </div>
-
-      {/* ② 입력 필드 */}
-      {!sendByEmail ? (
-        <input
-          type="text"
-          placeholder="0x로 시작하는 지갑 주소"
-          value={modalToAddress}
-          onChange={e => setModalToAddress(e.target.value.trim())}
-          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
-        />
-      ) : (
-        <input
-          type="email"
-          placeholder="받는 사람 이메일"
-          value={modalEmail}
-          onChange={e => setModalEmail(e.target.value.trim())}
-          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
-        />
-      )}
-
-      <div className="flex justify-center space-x-3">
-        <button
-          onClick={() => setShowTransferModal(false)}
-          className="px-4 py-2 bg-white/10 text-white rounded-lg"
-        >
-          취소
-        </button>
-        <button
-          onClick={async () => {
-            await handleTransfer(
-              modalTokenId,
-              modalContractAddress,
-              modalToAddress,
-              modalEmail
-            );
-            setShowTransferModal(false);
-          }}
-          disabled={
-            transferingId === modalTokenId ||
-            (sendByEmail
-              ? !modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
-              : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
-          }
-          className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
-        >
-{transferingId === modalTokenId ? (
-      <div className="flex items-center space-x-2">
-        <svg
-          className="w-4 h-4 animate-spin"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 4v5h.582m15.356 2A8 8 0 004.582 9M9 9h5m-1-1v6m0 0h.01"
-          />
-        </svg>
-        <span>전송중…</span>
+      <div className="relative backdrop-blur-xl bg-gray-900/95 rounded-2xl p-8 border border-cyan-500/20 shadow-2xl">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Chronos 전송</h3>
+              <p className="text-gray-400 text-xs">NFT를 다른 주소 또는 이메일로 전송합니다</p>
+            </div>
+          </div>
+          <button onClick={() => setShowTransferModal(false)} className="w-8 h-8 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg flex items-center justify-center transition-colors">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {/* 주소/이메일 선택 */}
+        <div className="flex justify-center space-x-4 mb-4 text-sm text-white">
+          <label className="space-x-2">
+            <input type="radio" checked={!sendByEmail} onChange={() => setSendByEmail(false)} />
+            <span>지갑 주소</span>
+          </label>
+          <label className="space-x-2">
+            <input type="radio" checked={sendByEmail} onChange={() => setSendByEmail(true)} />
+            <span>이메일</span>
+          </label>
+        </div>
+        {/* 입력 필드 */}
+        <div className="mb-6">
+          {!sendByEmail ? (
+            <input
+              type="text"
+              placeholder="0x로 시작하는 지갑 주소"
+              value={modalToAddress}
+              onChange={e => setModalToAddress(e.target.value.trim())}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+            />
+          ) : (
+            <input
+              type="email"
+              placeholder="받는 사람 이메일"
+              value={modalEmail}
+              onChange={e => setModalEmail(e.target.value.trim())}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+            />
+          )}
+        </div>
+        {/* 안내/경고 */}
+        <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg flex items-start space-x-3">
+          <div className="w-5 h-5 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-gray-300 text-sm leading-relaxed">정확한 주소/이메일을 입력하세요. 잘못 입력 시 복구가 불가합니다.</p>
+          </div>
+        </div>
+        {/* 버튼 */}
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={() => setShowTransferModal(false)}
+            className="px-5 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50"
+          >취소</button>
+          <button
+            onClick={async () => {
+              await handleTransfer(
+                modalTokenId,
+                modalContractAddress,
+                modalToAddress,
+                modalEmail
+              );
+              setShowTransferModal(false);
+            }}
+            disabled={
+              transferingId === modalTokenId ||
+              (sendByEmail
+                ? !modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+                : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
+            }
+            className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 flex items-center"
+          >
+            {transferingId === modalTokenId ? (
+              <>
+                <svg className="w-4 h-4 mr-2 animate-spin-reverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8 8 0 004.582 9M9 9h5m-1-1v6m0 0h.01" />
+                </svg>
+                전송중…
+              </>
+            ) : (
+              '전송하기'
+            )}
+          </button>
+        </div>
+        {/* 결과/에러 */}
+        {transferError && (
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center space-x-2">
+            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-red-400 text-sm">{transferError}</span>
+          </div>
+        )}
+        {transferResult && (
+          <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center space-x-2">
+            <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-green-400 text-sm">✔︎ 전송 완료!</span>
+          </div>
+        )}
       </div>
-    ) : (
-      '전송하기'
-    )}</button>
-      </div>
-
-      {transferError && (
-        <p className="text-red-500 text-sm mt-2">❌ {transferError}</p>
-      )}
-      {transferResult && (
-        <p className="text-green-400 text-sm mt-2">✔︎ 전송 완료!</p>
-      )}
     </div>
   </div>
 )}
 
 {/* 파일 보기 모달 */}
 {showFileModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center">
-    <div
-      className="absolute inset-0 bg-black/40 backdrop-blur-md"
-      onClick={() => setShowFileModal(false)}
-    />
-    <div className="relative z-10 bg-black/80 rounded-2xl p-8 w-full max-w-md text-center space-y-4">
-      <h3 className="text-white text-xl font-bold mb-2">타임캡슐 파일 보기</h3>
-      {fileModalLoading ? (
-        <div className="text-white">불러오는 중...</div>
-      ) : fileModalError ? (
-        <div className="text-red-400">{fileModalError}</div>
-      ) : fileModalIsEncrypted && fileModalPasswordStep === 'input' ? (
-        <div>
-          <input
-            type="password"
-            placeholder="파일 암호 입력 (최소 6자)"
-            value={fileModalPassword}
-            onChange={e => setFileModalPassword(e.target.value)}
-            className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white mb-4"
-          />
-          <button
-            onClick={handlePasswordSubmit}
-            className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg"
-          >
-            확인
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-black/80 to-indigo-900/80 backdrop-blur-xl" onClick={() => setShowFileModal(false)} />
+    <div className="relative max-w-lg w-full mx-4 p-1">
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 via-cyan-500/30 to-indigo-500/30 p-[3px]">
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/40 via-cyan-500/40 to-indigo-500/40 animate-pulse"></div>
+      </div>
+      <div className="relative backdrop-blur-xl bg-gray-900/95 rounded-2xl p-8 border border-purple-500/20 shadow-2xl">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">타임캡슐 파일 보기</h3>
+              <p className="text-gray-400 text-xs">첨부된 파일을 확인하고 다운로드할 수 있습니다</p>
+            </div>
+          </div>
+          <button onClick={() => setShowFileModal(false)} className="w-8 h-8 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg flex items-center justify-center transition-colors">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-      ) : (
-        <div>
-          {fileModalFiles.length === 0 ? (
-            <div className="text-gray-400">첨부된 파일이 없습니다.</div>
-          ) : (
-            <ul className="space-y-3">
-              {fileModalFiles.map((file: any, idx: number) => (
-                <li key={file.cid || idx} className="flex items-center justify-between bg-black/40 border border-white/10 rounded-lg px-4 py-2">
-                  <span className="text-white text-sm">{file.name || file.cid}</span>
-                  <button
-                    onClick={() => {handleDownloadFile(file); console.log('file', file)}}
-                    className="ml-4 px-3 py-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white rounded-lg text-xs"
-                  >
-                    다운로드
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-      <button
-        onClick={() => setShowFileModal(false)}
-        className="mt-4 px-4 py-2 bg-white/10 text-white rounded-lg"
-      >
-        닫기
-      </button>
+        {/* 본문 */}
+        {fileModalLoading ? (
+          <div className="text-white">불러오는 중...</div>
+        ) : fileModalError ? (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center space-x-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{fileModalError}</span>
+          </div>
+        ) : fileModalIsEncrypted && fileModalPasswordStep === 'input' ? (
+          <div className="space-y-4">
+            <input
+              type="password"
+              placeholder="파일 암호 입력 (최소 6자)"
+              value={fileModalPassword}
+              onChange={e => setFileModalPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+            />
+            <button
+              onClick={handlePasswordSubmit}
+              className="w-full px-6 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 font-medium rounded-lg transition-all duration-300"
+            >확인</button>
+          </div>
+        ) : (
+          <div>
+            {fileModalFiles.length === 0 ? (
+              <div className="text-gray-400">첨부된 파일이 없습니다.</div>
+            ) : (
+              <ul className="space-y-3">
+                {fileModalFiles.map((file: any, idx: number) => (
+                  <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-4 py-2">
+                    <span className="text-white text-sm">{file.name || file.cid}</span>
+                    <button
+                      onClick={() => {handleDownloadFile(file); console.log('file', file)}}
+                      className="ml-4 px-3 py-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-400/30 hover:to-purple-400/30 text-white rounded-lg text-xs transition-all duration-300"
+                    >다운로드</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        <button
+          onClick={() => setShowFileModal(false)}
+          className="mt-6 w-full px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-medium rounded-lg transition-all duration-300"
+        >닫기</button>
+      </div>
     </div>
   </div>
 )}

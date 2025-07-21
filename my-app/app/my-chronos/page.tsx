@@ -42,6 +42,8 @@ const [showTransferModal, setShowTransferModal] = useState(false);
 const [modalTokenId, setModalTokenId] = useState<string>('');
 const [modalContractAddress, setModalContractAddress] = useState<string>('');
 const [modalToAddress, setModalToAddress] = useState<string>('');
+const [sendByEmail, setSendByEmail] = useState(false);
+const [modalEmail, setModalEmail] = useState<string>('');
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
   );
@@ -49,12 +51,26 @@ const [modalToAddress, setModalToAddress] = useState<string>('');
 const handleTransfer = async (
   tokenId: string,
   contractAddress: string,
-  toAddress: string       // ← 추가
+  toAddress?: string,
+  email?: string
 ) => {
-  if (!toAddress) {
-    setTransferError('보내는 주소를 입력해주세요.');
-    return;
+  // 유효성 검사
+  if (sendByEmail) {
+    if (!modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setTransferError('유효한 이메일을 입력해주세요.');
+      return;
+    }
+  } else {
+    if (!toAddress) {
+      setTransferError('보내는 주소를 입력해주세요.');
+      return;
+    }
+    if (!toAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+      setTransferError('유효한 지갑 주소를 입력해주세요.');
+      return;
+    }
   }
+
   setTransferingId(tokenId);
   setTransferError(null);
   setTransferResult(null);
@@ -64,21 +80,25 @@ const handleTransfer = async (
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fromAddress,             // 서비스 지갑 또는 activeWallet.address
-        toAddress,               // 지금 입력받은 대상 주소
+        fromAddress,
         tokenId,
-        contractAddress
+        contractAddress,
+        // 모드에 따라 email 또는 toAddress 중 하나만 넘김
+        ...(sendByEmail 
+           ? { email: modalEmail } 
+           : { toAddress })
       })
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || '전송 실패');
-    setTransferResult(json.txHash);
+    setTransferResult(json.txHashes?.[0] || json.txHash);
   } catch (err: any) {
     setTransferError(err.message);
   } finally {
     setTransferingId(null);
   }
 };
+
 const [fromAddress, setFromAddress] = useState<string>('');
 
 useEffect(() => {
@@ -548,22 +568,52 @@ useEffect(() => {
         </div>
 {showTransferModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center">
-    {/* ① 흐림 + 반투명 검정 백드롭 */}
     <div
       className="absolute inset-0 bg-black/40 backdrop-blur-md"
       onClick={() => setShowTransferModal(false)}
     />
-
-    {/* ② 모달 카드 */}
     <div className="relative z-10 bg-black/80 rounded-2xl p-8 w-full max-w-sm text-center space-y-4">
       <h3 className="text-white text-xl font-bold">Chronos 전송</h3>
-      <input
-        type="text"
-        placeholder="0x로 시작하는 지갑 주소"
-        value={modalToAddress}
-        onChange={e => setModalToAddress(e.target.value.trim())}
-        className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
-      />
+
+      {/* ① 주소 vs 이메일 선택 */}
+      <div className="flex justify-center space-x-4 mb-4 text-sm text-white">
+        <label className="space-x-2">
+          <input
+            type="radio"
+            checked={!sendByEmail}
+            onChange={() => setSendByEmail(false)}
+          />
+          <span>지갑 주소</span>
+        </label>
+        <label className="space-x-2">
+          <input
+            type="radio"
+            checked={sendByEmail}
+            onChange={() => setSendByEmail(true)}
+          />
+          <span>이메일</span>
+        </label>
+      </div>
+
+      {/* ② 입력 필드 */}
+      {!sendByEmail ? (
+        <input
+          type="text"
+          placeholder="0x로 시작하는 지갑 주소"
+          value={modalToAddress}
+          onChange={e => setModalToAddress(e.target.value.trim())}
+          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
+        />
+      ) : (
+        <input
+          type="email"
+          placeholder="받는 사람 이메일"
+          value={modalEmail}
+          onChange={e => setModalEmail(e.target.value.trim())}
+          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
+        />
+      )}
+
       <div className="flex justify-center space-x-3">
         <button
           onClick={() => setShowTransferModal(false)}
@@ -573,27 +623,36 @@ useEffect(() => {
         </button>
         <button
           onClick={async () => {
-            await handleTransfer(modalTokenId, modalContractAddress, modalToAddress);
+            await handleTransfer(
+              modalTokenId,
+              modalContractAddress,
+              modalToAddress,
+              modalEmail
+            );
             setShowTransferModal(false);
           }}
           disabled={
             transferingId === modalTokenId ||
-            !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/)
+            (sendByEmail
+              ? !modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+              : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
           }
           className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
         >
           {transferingId === modalTokenId ? '전송중…' : '전송하기'}
         </button>
       </div>
-      {transferError && transferingId === modalTokenId && (
+
+      {transferError && (
         <p className="text-red-500 text-sm mt-2">❌ {transferError}</p>
       )}
-      {transferResult && transferingId !== modalTokenId && (
+      {transferResult && (
         <p className="text-green-400 text-sm mt-2">✔︎ 전송 완료!</p>
       )}
     </div>
   </div>
 )}
+
 
         {/* 빈 상태 메시지 */}
         {chronosList.length === 0 && !loading && (

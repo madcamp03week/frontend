@@ -10,7 +10,8 @@ export async function fetchOpenDateByTokenId(tokenId: string): Promise<{ openDat
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
   let tokenUri = await contract.tokenURI(tokenId);
   if (tokenUri.startsWith('ipfs://')) {
-    tokenUri = tokenUri.replace('ipfs://', 'https://petite-amaranth-bonobo.myfilebase.com/ipfs/');
+    const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+    tokenUri = tokenUri.replace('ipfs://', gateway);
   }
   const res = await fetch(tokenUri);
   if (!res.ok) throw new Error('IPFS 메타데이터 fetch 실패');

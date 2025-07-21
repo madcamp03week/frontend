@@ -199,7 +199,7 @@ export default function ProductPage() {
             { name: 'Web3.js', desc: '블록체인 연동' },
             { name: 'Next.js', desc: '풀스택 프레임워크' },
             { name: 'MongoDB', desc: '메타데이터 저장' },
-            { name: 'Filebase', desc: 'IPFS 게이트웨이' },
+            { name: 'Pinata', desc: 'IPFS 게이트웨이' },
             { name: 'Solidity', desc: '스마트 컨트랙트 언어' },
           ].map((tech, idx) => (
             <motion.div

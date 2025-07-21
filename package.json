@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@aws-sdk/client-s3": "^3.848.0",
+    "@pinata/sdk": "^2.1.0",
     "libsodium-wrappers-sumo": "^0.7.15"
   }
 }

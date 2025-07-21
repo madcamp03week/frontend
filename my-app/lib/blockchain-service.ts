@@ -408,8 +408,19 @@ export async function forceTransferToken(tokenId: string, newOwnerAddress: strin
       serviceWallet
     );
 
-    // 스마트컨트랙트 함수 호출
-    const tx = await contract.forceTransferToken(tokenId, newOwnerAddress);
+   // 토큰 ID를 BigInt로 변환
+  const bnId = BigInt(tokenId);
+
+   // 1) on‑chain 실제 소유자 조회
+  const realOwner = await contract.ownerOf(bnId);
+  console.log('on‑chain owner:', realOwner);
+
+   // 2) forceTransfer 호출 (from, to, tokenId 순서)
+  const tx = await contract.forceTransfer(
+   realOwner,
+   newOwnerAddress,
+   bnId
+);
 
     // 트랜잭션 완료 대기
     const receipt = await tx.wait();

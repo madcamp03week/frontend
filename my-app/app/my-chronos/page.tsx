@@ -35,6 +35,56 @@ export default function MyChronosPage() {
   const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const [transferingId, setTransferingId] = useState<string | null>(null);
+  const [transferError, setTransferError]   = useState<string | null>(null);
+  const [transferResult, setTransferResult] = useState<string | null>(null);
+const [showTransferModal, setShowTransferModal] = useState(false);
+const [modalTokenId, setModalTokenId] = useState<string>('');
+const [modalContractAddress, setModalContractAddress] = useState<string>('');
+const [modalToAddress, setModalToAddress] = useState<string>('');
+  const activeWallet = (cachedUserInfo?.wallets || wallets).find(
+    (w: any) => w.isActive
+  );
+// 페이지 상단에 선언되어 있는 handleTransfer
+const handleTransfer = async (
+  tokenId: string,
+  contractAddress: string,
+  toAddress: string       // ← 추가
+) => {
+  if (!toAddress) {
+    setTransferError('보내는 주소를 입력해주세요.');
+    return;
+  }
+  setTransferingId(tokenId);
+  setTransferError(null);
+  setTransferResult(null);
+
+  try {
+    const res = await fetch('/api/my-chronos/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromAddress,             // 서비스 지갑 또는 activeWallet.address
+        toAddress,               // 지금 입력받은 대상 주소
+        tokenId,
+        contractAddress
+      })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || '전송 실패');
+    setTransferResult(json.txHash);
+  } catch (err: any) {
+    setTransferError(err.message);
+  } finally {
+    setTransferingId(null);
+  }
+};
+const [fromAddress, setFromAddress] = useState<string>('');
+
+useEffect(() => {
+   if (activeWallet?.address) {
+     setFromAddress(activeWallet.address);   }
+ }, [activeWallet]);
 
   // 클라이언트 사이드 렌더링 확인
   useEffect(() => {
@@ -53,7 +103,6 @@ export default function MyChronosPage() {
   const shouldShowLoading = isClient && authLoading && !cachedUserInfo && !userProfile && !user;
 
   // 활성 지갑 주소 - localStorage 우선 사용
-  const activeWallet = (cachedUserInfo?.wallets || wallets).find((wallet: any) => wallet.isActive);
 
   // 타임캡슐 목록 가져오기
   const fetchChronosList = async () => {
@@ -465,12 +514,22 @@ export default function MyChronosPage() {
                         보기
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <button className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white rounded-xl transition-all duration-300 text-sm shadow-lg hover:shadow-white/10">
-                        전송
-                      </button>
-                    </td>
-                    <td className="px-6 py-4">
+                    {/* 테이블 각 행의 전송 버튼만 */}
+<td className="px-6 py-4">
+  <button
+    onClick={() => {
+      setModalTokenId(chronos.tokenId);
+      setModalContractAddress(chronos.contractAddress);
+      setModalToAddress('');
+      setShowTransferModal(true);
+    }}
+    className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white rounded-xl text-sm transition duration-200 shadow-lg"
+  >
+    전송
+  </button>
+</td>
+
+                 <td className="px-6 py-4">
                       <a 
                         href={chronos.permalink}
                         target="_blank"
@@ -487,6 +546,54 @@ export default function MyChronosPage() {
             </div>
           )}
         </div>
+{showTransferModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* ① 흐림 + 반투명 검정 백드롭 */}
+    <div
+      className="absolute inset-0 bg-black/40 backdrop-blur-md"
+      onClick={() => setShowTransferModal(false)}
+    />
+
+    {/* ② 모달 카드 */}
+    <div className="relative z-10 bg-black/80 rounded-2xl p-8 w-full max-w-sm text-center space-y-4">
+      <h3 className="text-white text-xl font-bold">Chronos 전송</h3>
+      <input
+        type="text"
+        placeholder="0x로 시작하는 지갑 주소"
+        value={modalToAddress}
+        onChange={e => setModalToAddress(e.target.value.trim())}
+        className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
+      />
+      <div className="flex justify-center space-x-3">
+        <button
+          onClick={() => setShowTransferModal(false)}
+          className="px-4 py-2 bg-white/10 text-white rounded-lg"
+        >
+          취소
+        </button>
+        <button
+          onClick={async () => {
+            await handleTransfer(modalTokenId, modalContractAddress, modalToAddress);
+            setShowTransferModal(false);
+          }}
+          disabled={
+            transferingId === modalTokenId ||
+            !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/)
+          }
+          className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
+        >
+          {transferingId === modalTokenId ? '전송중…' : '전송하기'}
+        </button>
+      </div>
+      {transferError && transferingId === modalTokenId && (
+        <p className="text-red-500 text-sm mt-2">❌ {transferError}</p>
+      )}
+      {transferResult && transferingId !== modalTokenId && (
+        <p className="text-green-400 text-sm mt-2">✔︎ 전송 완료!</p>
+      )}
+    </div>
+  </div>
+)}
 
         {/* 빈 상태 메시지 */}
         {chronosList.length === 0 && !loading && (

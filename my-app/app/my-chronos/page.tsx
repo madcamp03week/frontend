@@ -9,6 +9,7 @@ import Navigation from '../../components/Navigation';
 import { openTimeCapsule } from '../../lib/blockchain';
 import { decryptFile } from '../../lib/crypto';
 
+
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
   if (typeof window === 'undefined') return null;
@@ -46,6 +47,7 @@ export default function MyChronosPage() {
   const [modalToAddress, setModalToAddress] = useState<string>('');
   const [sendByEmail, setSendByEmail] = useState(false);
   const [modalEmail, setModalEmail] = useState<string>('');
+  const [emailExists, setEmailExists] = useState<boolean | null>(null);
   const [fromAddress, setFromAddress] = useState<string>('');
   // 파일 모달 관련 Hook들 (최상단에 위치)
   const [showFileModal, setShowFileModal] = useState(false);
@@ -60,6 +62,30 @@ export default function MyChronosPage() {
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
   );
+
+
+  useEffect(() => {
+  if (!sendByEmail) return;
+  // 이메일 포맷 먼저 체크
+  const isFormatValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modalEmail);
+  if (!isFormatValid) {
+    setEmailExists(null);
+    return;
+  }
+
+  let cancelled = false;
+  fetch(`/api/auth/check-email?email=${encodeURIComponent(modalEmail)}`)
+    .then(res => {
+      if (cancelled) return;
+      setEmailExists(res.ok);
+    })
+    .catch(() => {
+      if (!cancelled) setEmailExists(false);
+    });
+
+  return () => { cancelled = true; };
+}, [modalEmail, sendByEmail]);
+
 // 페이지 상단에 선언되어 있는 handleTransfer
 const handleTransfer = async (
   tokenId: string,
@@ -109,11 +135,19 @@ const res = await fetch('/api/my-chronos/send', {
   })
 });
 
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || '전송 실패');
-    setTransferResult(json.txHashes?.[0] || json.txHash);
-    fetchChronosList();
-  } catch (err: any) {
+   const json = await res.json();
+   if (!res.ok) {
+     // 이메일 모드에서 404 → “유효하지 않은 이메일입니다.”
+     if (sendByEmail && res.status === 404) {
+       setTransferError('유효하지 않은 이메일입니다.');
+     } else {
+       setTransferError(json.error || '전송 실패');
+     }
+     return;
+   }
+   setTransferResult(json.txHashes?.[0] || json.txHash);
+   // 전송 성공 후 목록 새로고침
+   fetchChronosList();  } catch (err: any) {
     setTransferError(err.message);
   } finally {
     setTransferingId(null);
@@ -682,12 +716,12 @@ useEffect(() => {
 {showTransferModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
     {/* 그라데이션 테두리 */}
-    <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-black/80 to-indigo-900/80 backdrop-blur-xl" onClick={() => setShowTransferModal(false)} />
+    <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-black/80 to-indigo-900/80 backdrop-blur-none" onClick={() => setShowTransferModal(false)} />
     <div className="relative max-w-lg w-full mx-4 p-1">
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-indigo-500/30 p-[3px]">
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/40 via-purple-500/40 to-indigo-500/40 animate-pulse"></div>
+        <div className="absolute inset-4 rounded-2xl bg-gradient-to-r from-cyan-500/40 via-purple-500/40 to-indigo-500/40 animate-pulse"></div>
       </div>
-      <div className="relative backdrop-blur-xl bg-gray-900/95 rounded-2xl p-8 border border-cyan-500/20 shadow-2xl">
+      <div className="relative backdrop-blur-xl bg-gray-900/95 rounded-2xl p-8 border border-cyan-500/5 shadow-2xl">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -708,15 +742,39 @@ useEffect(() => {
           </button>
         </div>
         {/* 주소/이메일 선택 */}
-        <div className="flex justify-center space-x-4 mb-4 text-sm text-white">
-          <label className="space-x-2">
-            <input type="radio" checked={!sendByEmail} onChange={() => setSendByEmail(false)} />
-            <span>지갑 주소</span>
-          </label>
-          <label className="space-x-2">
-            <input type="radio" checked={sendByEmail} onChange={() => setSendByEmail(true)} />
-            <span>이메일</span>
-          </label>
+        <div className="flex justify-center mb-6">
+          <div className="flex bg-gray-800/80 border border-cyan-500/30 rounded-full overflow-hidden shadow-inner">
+            <button
+              type="button"
+              className={`flex items-center px-6 py-2 focus:outline-none transition-all duration-200 font-semibold text-sm
+                ${!sendByEmail ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-white shadow-lg scale-105' : 'text-gray-400 hover:text-white'}`}
+              onClick={() => setSendByEmail(false)}
+            >
+              <span className="mr-2">
+                {!sendByEmail ? (
+                  <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                )}
+              </span>
+              지갑 주소
+            </button>
+            <button
+              type="button"
+              className={`flex items-center px-6 py-2 focus:outline-none transition-all duration-200 font-semibold text-sm
+                ${sendByEmail ? 'bg-gradient-to-r from-purple-500/30 to-cyan-500/30 text-white shadow-lg scale-105' : 'text-gray-400 hover:text-white'}`}
+              onClick={() => setSendByEmail(true)}
+            >
+              <span className="mr-2">
+                {sendByEmail ? (
+                  <svg className="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                )}
+              </span>
+              이메일
+            </button>
+          </div>
         </div>
         {/* 입력 필드 */}
         <div className="mb-6">
@@ -729,13 +787,47 @@ useEffect(() => {
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
             />
           ) : (
-            <input
-              type="email"
-              placeholder="받는 사람 이메일"
-              value={modalEmail}
-              onChange={e => setModalEmail(e.target.value.trim())}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-            />
+            <div className="relative">
+              <input
+                type="email"
+                placeholder="받는 사람 이메일"
+                value={modalEmail}
+                onChange={e => setModalEmail(e.target.value.trim())}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all pr-10"
+              />
+              {modalEmail.length > 0 && (
+                modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? (
+                  emailExists === false ? (
+                    <svg
+                      className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5 text-green-400 absolute right-3 top-1/2 -translate-y-1/2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )
+                ) : (
+                  <svg
+                    className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )
+              )}
+            </div>
           )}
         </div>
         {/* 안내/경고 */}
@@ -768,7 +860,7 @@ useEffect(() => {
             disabled={
               transferingId === modalTokenId ||
               (sendByEmail
-                ? !modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+                ? (!modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) || emailExists === false)
                 : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
             }
             className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 flex items-center"
@@ -810,16 +902,16 @@ useEffect(() => {
 {/* 파일 보기 모달 */}
 {showFileModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-black/80 to-indigo-900/80 backdrop-blur-xl" onClick={() => setShowFileModal(false)} />
+    <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-black/80 to-indigo-900/80 backdrop-blur-none" onClick={() => setShowFileModal(false)} />
     <div className="relative max-w-lg w-full mx-4 p-1">
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 via-cyan-500/30 to-indigo-500/30 p-[3px]">
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/40 via-cyan-500/40 to-indigo-500/40 animate-pulse"></div>
+        <div className="absolute inset-4 rounded-2xl bg-gradient-to-r from-purple-500/40 via-cyan-500/40 to-indigo-500/40 animate-pulse"></div>
       </div>
-      <div className="relative backdrop-blur-xl bg-gray-900/95 rounded-2xl p-8 border border-purple-500/20 shadow-2xl">
+      <div className="relative backdrop-blur-xl bg-gray-900/95 rounded-2xl p-8 border border-purple-500/5 shadow-2xl">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <div className="w-7 h-7 bg-purple-500/30 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>

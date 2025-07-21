@@ -99,6 +99,7 @@ const res = await fetch('/api/my-chronos/send', {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || '전송 실패');
     setTransferResult(json.txHashes?.[0] || json.txHash);
+    fetchChronosList();
   } catch (err: any) {
     setTransferError(err.message);
   } finally {
@@ -646,8 +647,26 @@ useEffect(() => {
           }
           className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
         >
-          {transferingId === modalTokenId ? '전송중…' : '전송하기'}
-        </button>
+{transferingId === modalTokenId ? (
+      <div className="flex items-center space-x-2">
+        <svg
+          className="w-4 h-4 animate-spin"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 4v5h.582m15.356 2A8 8 0 004.582 9M9 9h5m-1-1v6m0 0h.01"
+          />
+        </svg>
+        <span>전송중…</span>
+      </div>
+    ) : (
+      '전송하기'
+    )}</button>
       </div>
 
       {transferError && (

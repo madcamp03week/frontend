@@ -11,7 +11,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // 필수 필드 검증
-    const { name, content, openDate, description, isEncrypted, password, isPublic, tags, enhancedSecurity, n, m, isTransferable, isSmartContractTransferable, isSmartContractOpenable, walletAddresses } = body;
+    const { 
+      name,
+      description,
+      openDate,
+      isEncrypted,
+      isPublic,
+      tags,
+      enhancedSecurity,
+      n,
+      m,
+      isTransferable,
+      isSmartContractTransferable,
+      isSmartContractOpenable,
+      walletAddresses,
+      encryptedFiles
+    } = body;
     
     if (!name) {
       return NextResponse.json(
@@ -76,7 +91,6 @@ export async function POST(request: NextRequest) {
         description: description || '',
         openDate: openDate ? new Date(openDate) : null,
         isEncrypted: isEncrypted || false,
-        password: isEncrypted ? password : null,
         isPublic: isPublic || false,
         tags: tags ? tags.split(',').map((tag: string) => tag.trim()) : [],
         enhancedSecurity: enhancedSecurity || false,

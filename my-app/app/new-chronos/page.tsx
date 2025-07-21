@@ -236,7 +236,6 @@ export default function NewChronosPage() {
         const chronosData = {
           name,
           description,
-          content,
           openDate: (() => {
             const dateInput = document.getElementById('openDate') as HTMLInputElement;
             const timeInput = document.getElementById('openTime') as HTMLInputElement;
@@ -251,7 +250,6 @@ export default function NewChronosPage() {
             return null;
           })(),
           isEncrypted,
-          password: isEncrypted ? password : null,
           isPublic,
           tags,
           enhancedSecurity,
@@ -376,7 +374,6 @@ export default function NewChronosPage() {
       const chronosData = {
         name,
         description,
-        content,
         openDate: (() => {
           const dateInput = document.getElementById('openDate') as HTMLInputElement;
           const timeInput = document.getElementById('openTime') as HTMLInputElement;
@@ -391,7 +388,6 @@ export default function NewChronosPage() {
           return null;
         })(),
         isEncrypted,
-        password: isEncrypted ? password : null,
         isPublic,
         tags,
         enhancedSecurity,
@@ -400,34 +396,10 @@ export default function NewChronosPage() {
         isTransferable,
         isSmartContractTransferable,
         isSmartContractOpenable,
-        userId: user?.uid || 'anonymous',
+        userId: user!.uid,
         walletAddresses: userWalletAddresses,
         encryptedFiles: allFiles
       };
-
-      console.log('📦 타임캡슐 데이터 (암호화 없음):', {
-        name,
-        description,
-        content: content.substring(0, 100) + '...',
-        openDate: chronosData.openDate,
-        isEncrypted,
-        isPublic,
-        tags,
-        enhancedSecurity,
-        n: chronosData.n,
-        m: chronosData.m,
-        userId: chronosData.userId,
-        walletAddresses: chronosData.walletAddresses,
-        totalFiles: allFiles.length,
-        filesInfo: allFiles.map(file => ({
-          fileName: file.fileName,
-          originalName: file.originalName,
-          fileSize: file.fileSize,
-          fileType: file.fileType,
-          isEncrypted: file.isEncrypted,
-          dataLength: file.encryptedData.length
-        }))
-      });
 
       // API 호출
         const response = await fetch('/api/chronos', {

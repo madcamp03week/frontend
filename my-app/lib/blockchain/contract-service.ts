@@ -1,10 +1,13 @@
 import { ethers } from 'ethers';
 import { CONTRACT_ABI } from '../contract-abi';
 import { uploadIPFSMetadata } from './ipfs-service';
+import { CHRONOS_TOKEN_CONTRACT_ABI } from '../contract-abi';
 
 const INFURA_URL = process.env.INFURA_URL;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
+const CHRONOS_TOKEN_CONTRACT_ADDR = process.env.CHRONOS_TOKEN_CONTRACT_ADDR;
 
 export async function createTimeCapsuleOnBlockchain(data: {
   name: string;
@@ -176,5 +179,39 @@ export async function checkNFTOwnership(tokenId: string, walletAddress: string) 
       success: false,
       error: error instanceof Error ? error.message : '알 수 없는 오류'
     };
+  }
+}
+
+/**
+ * CHRONOS 토큰 민팅 함수
+ * @param address 민팅 받을 지갑 주소
+ * @param amount 민팅할 토큰 수량
+ * @returns { success: boolean, txHash?: string, blockNumber?: number, error?: string }
+ */
+export async function mintChronosToken(address: string, amount: number) {
+  try {
+    if (!address || !ethers.isAddress(address)) {
+      return { success: false, error: '유효하지 않은 주소입니다.' };
+    }
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      return { success: false, error: '유효하지 않은 수량입니다.' };
+    }
+    if (!CHRONOS_TOKEN_CONTRACT_ADDR) {
+      return { success: false, error: '토큰 컨트랙트 주소가 설정되지 않았습니다.' };
+    }
+    if (!INFURA_URL) {
+      return { success: false, error: 'INFURA_URL이 설정되지 않았습니다.' };
+    }
+    if (!PRIVATE_KEY) {
+      return { success: false, error: 'PRIVATE_KEY가 설정되지 않았습니다.' };
+    }
+    const provider = new ethers.JsonRpcProvider(INFURA_URL);
+    const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    const contract = new ethers.Contract(CHRONOS_TOKEN_CONTRACT_ADDR, CHRONOS_TOKEN_CONTRACT_ABI, wallet);
+    const tx = await contract.mint(address, amount);
+    const receipt = await tx.wait();
+    return { success: true, txHash: receipt.hash, blockNumber: receipt.blockNumber };
+  } catch (error: any) {
+    return { success: false, error: error?.message || '알 수 없는 오류' };
   }
 } 

@@ -38,6 +38,10 @@ export default function MyChronosPage() {
   const [transferingId, setTransferingId] = useState<string | null>(null);
   const [transferError, setTransferError]   = useState<string | null>(null);
   const [transferResult, setTransferResult] = useState<string | null>(null);
+const [showTransferModal, setShowTransferModal] = useState(false);
+const [modalTokenId, setModalTokenId] = useState<string>('');
+const [modalContractAddress, setModalContractAddress] = useState<string>('');
+const [modalToAddress, setModalToAddress] = useState<string>('');
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
   );
@@ -510,44 +514,22 @@ useEffect(() => {
                         보기
                       </button>
                     </td>
-                    {/* 전송 버튼 칸 */}
-        <td className="px-6 py-4">
-       <button
-         onClick={() => {
-      // 클릭 시 주소 입력창 띄우기
-      const to = window.prompt('전송할 지갑 주소를 입력하세요', '');
-      if (!to) return;
-      // 입력한 주소가 있으면 실제 전송 함수 호출
-      handleTransfer(
-        chronos.tokenId,
-        chronos.contractAddress,
-        to.trim()
-      );
+                    {/* 테이블 각 행의 전송 버튼만 */}
+<td className="px-6 py-4">
+  <button
+    onClick={() => {
+      setModalTokenId(chronos.tokenId);
+      setModalContractAddress(chronos.contractAddress);
+      setModalToAddress('');
+      setShowTransferModal(true);
     }}
-    disabled={transferingId === chronos.tokenId}
-    className={`px-4 py-2 rounded-xl text-sm transition-all duration-200 ${
-      transferingId === chronos.tokenId
-        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-        : 'bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white'
-    }`}
+    className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white rounded-xl text-sm transition duration-200 shadow-lg"
   >
-    {transferingId === chronos.tokenId ? '전송중…' : '전송'}
+    전송
   </button>
+</td>
 
-  {transferError && transferingId === chronos.tokenId && (
-    <p className="mt-1 text-xs text-red-400">❌ {transferError}</p>
-  )}
-
-  {transferResult && transferingId !== chronos.tokenId && (
-    <p className="mt-1 text-xs text-green-300">✔︎ {transferResult.slice(0,10)}…</p>
-    )}
-      {transferResult && transferingId !== chronos.tokenId && (
-      <p className="mt-1 text-xs text-green-300">✔︎ 전송 완료! TX: {transferResult.slice(0,10)}…</p>
-      )}
-      </td>
-
-
-                    <td className="px-6 py-4">
+                 <td className="px-6 py-4">
                       <a 
                         href={chronos.permalink}
                         target="_blank"
@@ -564,6 +546,54 @@ useEffect(() => {
             </div>
           )}
         </div>
+{showTransferModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* ① 흐림 + 반투명 검정 백드롭 */}
+    <div
+      className="absolute inset-0 bg-black/40 backdrop-blur-md"
+      onClick={() => setShowTransferModal(false)}
+    />
+
+    {/* ② 모달 카드 */}
+    <div className="relative z-10 bg-black/80 rounded-2xl p-8 w-full max-w-sm text-center space-y-4">
+      <h3 className="text-white text-xl font-bold">Chronos 전송</h3>
+      <input
+        type="text"
+        placeholder="0x로 시작하는 지갑 주소"
+        value={modalToAddress}
+        onChange={e => setModalToAddress(e.target.value.trim())}
+        className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
+      />
+      <div className="flex justify-center space-x-3">
+        <button
+          onClick={() => setShowTransferModal(false)}
+          className="px-4 py-2 bg-white/10 text-white rounded-lg"
+        >
+          취소
+        </button>
+        <button
+          onClick={async () => {
+            await handleTransfer(modalTokenId, modalContractAddress, modalToAddress);
+            setShowTransferModal(false);
+          }}
+          disabled={
+            transferingId === modalTokenId ||
+            !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/)
+          }
+          className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
+        >
+          {transferingId === modalTokenId ? '전송중…' : '전송하기'}
+        </button>
+      </div>
+      {transferError && transferingId === modalTokenId && (
+        <p className="text-red-500 text-sm mt-2">❌ {transferError}</p>
+      )}
+      {transferResult && transferingId !== modalTokenId && (
+        <p className="text-green-400 text-sm mt-2">✔︎ 전송 완료!</p>
+      )}
+    </div>
+  </div>
+)}
 
         {/* 빈 상태 메시지 */}
         {chronosList.length === 0 && !loading && (

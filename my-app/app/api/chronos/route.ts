@@ -11,7 +11,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // 필수 필드 검증
-    const { name, content, openDate, description, isEncrypted, password, isPublic, tags, enhancedSecurity, n, m, isTransferable, isSmartContractTransferable, isSmartContractOpenable, walletAddresses } = body;
+    const {
+      name,
+      description,
+      openDate, // ISO string (UTC)
+      isEncrypted,
+      isPublic,
+      tags, // string (쉼표 구분)
+      enhancedSecurity,
+      n,
+      m,
+      isTransferable,
+      isSmartContractTransferable,
+      isSmartContractOpenable,
+      walletAddresses, // string[]
+      encryptedFiles // 배열
+      // userId는 여기서 제외
+    } = body;
+
+    console.log('openDate:', openDate);
     
     if (!name) {
       return NextResponse.json(
@@ -21,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 사용자 정보 (실제로는 인증 미들웨어에서 가져와야 함)
-    const userId = body.userId || 'anonymous';
+    let userId = body.userId || 'anonymous';
     
     // 사용자의 지갑 주소들 처리
     let userWalletAddresses: string[] = [];
@@ -46,8 +64,10 @@ export async function POST(request: NextRequest) {
         recipients: userWalletAddresses,
         isTransferable: isTransferable !== undefined ? isTransferable : true,
         isSmartContractTransferable: isSmartContractTransferable !== undefined ? isSmartContractTransferable : true,
-        isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true
-      });
+        isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true,
+        isEncrypted, // 추가
+        encryptedFiles // 추가
+      } as any);
       
       if (!blockchainResult.success) {
         return NextResponse.json(
@@ -76,7 +96,6 @@ export async function POST(request: NextRequest) {
         description: description || '',
         openDate: openDate ? new Date(openDate) : null,
         isEncrypted: isEncrypted || false,
-        password: isEncrypted ? password : null,
         isPublic: isPublic || false,
         tags: tags ? tags.split(',').map((tag: string) => tag.trim()) : [],
         enhancedSecurity: enhancedSecurity || false,

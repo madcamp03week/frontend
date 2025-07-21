@@ -32,7 +32,9 @@ export default function NewChronosPage() {
   // 모든 훅은 컴포넌트 최상단에서 한 번만 호출
   const router = useRouter();
   const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading } = useAuth();
-  const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
+  const [defaultDate, setDefaultDate] = useState('');
+  const [defaultTime, setDefaultTime] = useState('');
+  const [cachedUserInfo, setCachedUserInfo] = useState<{ userProfile: any; wallets: any } | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
@@ -70,6 +72,13 @@ export default function NewChronosPage() {
 
   // 컴포넌트 마운트 시 캐시된 사용자 정보 확인
   useEffect(() => {
+    // 날짜/시간 기본값 세팅
+    const now = new Date();
+    const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    setDefaultDate(kst.toISOString().slice(0, 10));
+    setDefaultTime(kst.toISOString().slice(11, 16));
+
+    // localStorage 접근
     setCachedUserInfo(getCachedUserInfo());
   }, []);
 
@@ -158,8 +167,8 @@ export default function NewChronosPage() {
             });
             allFiles.push({
               encryptedData: encryptedContent.encryptedData,
-              fileName: encryptedContent.fileName,
-              originalName: 'content.txt',
+              fileName: 'encrypted_content',
+              originalName: 'encrypted_content',
               fileSize: contentFileObj.size,
               fileType: 'text/plain',
               isEncrypted: true
@@ -190,10 +199,10 @@ export default function NewChronosPage() {
               });
               return {
                 encryptedData: result.encryptedData,
-                fileName: result.fileName,
-                originalName: file.name,
+                fileName: 'encrypted_file',
+                originalName: 'encrypted_file',
                 fileSize: file.size,
-                fileType: file.type,
+                fileType: 'encrypted_type',
                 isEncrypted: true
               };
             } catch (error) {
@@ -236,22 +245,20 @@ export default function NewChronosPage() {
         const chronosData = {
           name,
           description,
-          content,
           openDate: (() => {
             const dateInput = document.getElementById('openDate') as HTMLInputElement;
             const timeInput = document.getElementById('openTime') as HTMLInputElement;
             if (dateInput?.value && timeInput?.value) {
               // KST로 입력된 값을 UTC로 변환
               const kstString = `${dateInput.value}T${timeInput.value}`;
+              console.log('kstString:', kstString);
               const kstDate = new Date(kstString);
-              // KST → UTC: KST는 UTC+9이므로 9시간 빼기
-              const utcDate = new Date(kstDate.getTime() - 9 * 60 * 60 * 1000);
-              return utcDate.toISOString(); // 항상 Z(UTC)로 끝남
+
+              return kstDate.toISOString(); // 항상 Z(UTC)로 끝남
             }
             return null;
           })(),
           isEncrypted,
-          password: isEncrypted ? password : null,
           isPublic,
           tags,
           enhancedSecurity,
@@ -376,22 +383,20 @@ export default function NewChronosPage() {
       const chronosData = {
         name,
         description,
-        content,
         openDate: (() => {
           const dateInput = document.getElementById('openDate') as HTMLInputElement;
           const timeInput = document.getElementById('openTime') as HTMLInputElement;
           if (dateInput?.value && timeInput?.value) {
             // KST로 입력된 값을 UTC로 변환
             const kstString = `${dateInput.value}T${timeInput.value}`;
+            console.log('kstString:', kstString);
             const kstDate = new Date(kstString);
-            // KST → UTC: KST는 UTC+9이므로 9시간 빼기
-            const utcDate = new Date(kstDate.getTime() - 9 * 60 * 60 * 1000);
-            return utcDate.toISOString(); // 항상 Z(UTC)로 끝남
+
+            return kstDate.toISOString(); // 항상 Z(UTC)로 끝남
           }
           return null;
         })(),
         isEncrypted,
-        password: isEncrypted ? password : null,
         isPublic,
         tags,
         enhancedSecurity,
@@ -400,34 +405,10 @@ export default function NewChronosPage() {
         isTransferable,
         isSmartContractTransferable,
         isSmartContractOpenable,
-        userId: user?.uid || 'anonymous',
+        userId: user!.uid,
         walletAddresses: userWalletAddresses,
         encryptedFiles: allFiles
       };
-
-      console.log('📦 타임캡슐 데이터 (암호화 없음):', {
-        name,
-        description,
-        content: content.substring(0, 100) + '...',
-        openDate: chronosData.openDate,
-        isEncrypted,
-        isPublic,
-        tags,
-        enhancedSecurity,
-        n: chronosData.n,
-        m: chronosData.m,
-        userId: chronosData.userId,
-        walletAddresses: chronosData.walletAddresses,
-        totalFiles: allFiles.length,
-        filesInfo: allFiles.map(file => ({
-          fileName: file.fileName,
-          originalName: file.originalName,
-          fileSize: file.fileSize,
-          fileType: file.fileType,
-          isEncrypted: file.isEncrypted,
-          dataLength: file.encryptedData.length
-        }))
-      });
 
       // API 호출
         const response = await fetch('/api/chronos', {
@@ -541,11 +522,8 @@ export default function NewChronosPage() {
                       id="openDate"
                       type="date"
                       required
-                      defaultValue={(() => {
-                        const now = new Date();
-                        const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-                        return kst.toISOString().slice(0, 10);
-                      })()}
+                      value={defaultDate}
+                      onChange={e => setDefaultDate(e.target.value)}
                       className="w-full px-4 py-3 pr-12 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-12 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:text-white [&::-webkit-datetime-edit-fields-wrapper]:text-white [&::-webkit-datetime-edit-text]:text-white [&::-webkit-datetime-edit-month-field]:text-white [&::-webkit-datetime-edit-day-field]:text-white [&::-webkit-datetime-edit-year-field]:text-white"
                     />
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
@@ -565,11 +543,8 @@ export default function NewChronosPage() {
                       type="time"
                       step="60"
                       required
-                      defaultValue={(() => {
-                        const now = new Date();
-                        const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-                        return kst.toISOString().slice(11, 16);
-                      })()}
+                      value={defaultTime}
+                      onChange={e => setDefaultTime(e.target.value)}
                       className="w-full px-4 py-3 pr-12 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-12 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:text-white [&::-webkit-datetime-edit-fields-wrapper]:text-white [&::-webkit-datetime-edit-text]:text-white [&::-webkit-datetime-edit-hour-field]:text-white [&::-webkit-datetime-edit-minute-field]:text-white"
                     />
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">

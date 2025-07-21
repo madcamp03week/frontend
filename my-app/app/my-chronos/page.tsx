@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import LoginRequired from '../../components/LoginRequired';
 import Navigation from '../../components/Navigation';
 import { openTimeCapsule } from '../../lib/blockchain';
+import { decryptFile } from '../../lib/crypto';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -22,6 +23,7 @@ const getCachedUserInfo = () => {
 };
 
 export default function MyChronosPage() {
+  // 기존 Hook들
   const { user, wallets, userProfile, logout, createNewWallet, loading: authLoading, dataLoaded } = useAuth();
   const [cachedUserInfo, setCachedUserInfo] = useState(getCachedUserInfo());
   const [chronosList, setChronosList] = useState<any[]>([]);
@@ -38,12 +40,23 @@ export default function MyChronosPage() {
   const [transferingId, setTransferingId] = useState<string | null>(null);
   const [transferError, setTransferError]   = useState<string | null>(null);
   const [transferResult, setTransferResult] = useState<string | null>(null);
-const [showTransferModal, setShowTransferModal] = useState(false);
-const [modalTokenId, setModalTokenId] = useState<string>('');
-const [modalContractAddress, setModalContractAddress] = useState<string>('');
-const [modalToAddress, setModalToAddress] = useState<string>('');
-const [sendByEmail, setSendByEmail] = useState(false);
-const [modalEmail, setModalEmail] = useState<string>('');
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [modalTokenId, setModalTokenId] = useState<string>('');
+  const [modalContractAddress, setModalContractAddress] = useState<string>('');
+  const [modalToAddress, setModalToAddress] = useState<string>('');
+  const [sendByEmail, setSendByEmail] = useState(false);
+  const [modalEmail, setModalEmail] = useState<string>('');
+  const [fromAddress, setFromAddress] = useState<string>('');
+  // 파일 모달 관련 Hook들 (최상단에 위치)
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [fileModalLoading, setFileModalLoading] = useState(false);
+  const [fileModalTokenId, setFileModalTokenId] = useState<string>('');
+  const [fileModalFiles, setFileModalFiles] = useState<any[]>([]);
+  const [fileModalIsEncrypted, setFileModalIsEncrypted] = useState<boolean>(false);
+  const [fileModalPassword, setFileModalPassword] = useState<string>('');
+  const [fileModalPasswordStep, setFileModalPasswordStep] = useState<'input'|'list'>('input');
+  const [fileModalError, setFileModalError] = useState<string|null>(null);
+
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
   );
@@ -106,8 +119,6 @@ const res = await fetch('/api/my-chronos/send', {
     setTransferingId(null);
   }
 };
-
-const [fromAddress, setFromAddress] = useState<string>('');
 
 useEffect(() => {
    if (activeWallet?.address) {
@@ -304,6 +315,106 @@ useEffect(() => {
 
   // 활성 지갑 주소
   const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
+
+  // 파일 보기 버튼 클릭 핸들러
+  const handleViewFiles = async (tokenId: string) => {
+    setFileModalTokenId(tokenId);
+    setShowFileModal(true);
+    setFileModalLoading(true);
+    setFileModalFiles([]);
+    setFileModalIsEncrypted(false);
+    setFileModalPassword('');
+    setFileModalPasswordStep('input');
+    setFileModalError(null);
+    try {
+      const res = await fetch(`/api/chronos/${tokenId}/view`);
+      if (!res.ok) throw new Error('파일 정보를 불러오지 못했습니다.');
+      const data = await res.json();
+      setFileModalIsEncrypted(!!data.isEncrypted);
+      setFileModalFiles(data.uploadedFileInfos || []);
+      if (!data.isEncrypted) {
+        setFileModalPasswordStep('list');
+      } else {
+        setFileModalPasswordStep('input');
+      }
+    } catch (e: any) {
+      setFileModalError(e.message || '파일 정보를 불러오지 못했습니다.');
+    } finally {
+      setFileModalLoading(false);
+    }
+  };
+
+  // 파일 다운로드 핸들러
+  const handleDownloadFile = async (fileInfo: any) => {
+    const cid = fileInfo.ipfsUrl.split('/').pop();
+    try {
+      if (!fileModalIsEncrypted) {
+        // 암호화 안된 파일: 바로 다운로드
+        const url = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        console.log('url', url);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('파일 다운로드 실패');
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = fileInfo.name || 'file';
+        a.click();
+      } else {
+        // 암호화된 파일: 다운로드 후 복호화
+        if (!fileModalPassword || fileModalPassword.length < 6) {
+          setFileModalError('비밀번호를 입력하세요.');
+          return;
+        }
+        const url = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+
+        function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+          return new Promise((resolve, reject) => {
+            const blob = new Blob([buffer]);
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const target = e.target as FileReader | null;
+              if (!target) {
+                reject(new Error("FileReader target is null"));
+                return;
+              }
+              const dataUrl = target.result;
+              if (typeof dataUrl !== "string") {
+                reject(new Error("FileReader result is not a string"));
+                return;
+              }
+              const base64 = dataUrl.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        const base64String = await arrayBufferToBase64(arrayBuffer);
+        console.log('base64String', base64String);
+
+        const { file } = await decryptFile(base64String, fileModalPassword);
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(file);
+        a.download = file.name;
+        a.click();
+      }
+    } catch (e: any) {
+      setFileModalError(e.message || '다운로드 실패');
+    }
+  };
+
+  // 암호 입력 후 파일 리스트로 전환
+  const handlePasswordSubmit = () => {
+    if (!fileModalPassword || fileModalPassword.length < 6) {
+      setFileModalError('비밀번호는 최소 6자 이상이어야 합니다.');
+      return;
+    }
+    setFileModalPasswordStep('list');
+    setFileModalError(null);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white relative overflow-hidden">
@@ -538,7 +649,15 @@ useEffect(() => {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <button className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white rounded-xl transition-all duration-300 text-sm shadow-lg hover:shadow-white/10">
+                      <button
+                        onClick={() => handleViewFiles(chronos.tokenId)}
+                        disabled={chronos.status !== 'opened'}
+                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-sm shadow-lg ${
+                          chronos.status === 'opened'
+                            ? 'bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white hover:shadow-white/10'
+                            : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
                         보기
                       </button>
                     </td>
@@ -675,6 +794,66 @@ useEffect(() => {
       {transferResult && (
         <p className="text-green-400 text-sm mt-2">✔︎ 전송 완료!</p>
       )}
+    </div>
+  </div>
+)}
+
+{/* 파일 보기 모달 */}
+{showFileModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="absolute inset-0 bg-black/40 backdrop-blur-md"
+      onClick={() => setShowFileModal(false)}
+    />
+    <div className="relative z-10 bg-black/80 rounded-2xl p-8 w-full max-w-md text-center space-y-4">
+      <h3 className="text-white text-xl font-bold mb-2">타임캡슐 파일 보기</h3>
+      {fileModalLoading ? (
+        <div className="text-white">불러오는 중...</div>
+      ) : fileModalError ? (
+        <div className="text-red-400">{fileModalError}</div>
+      ) : fileModalIsEncrypted && fileModalPasswordStep === 'input' ? (
+        <div>
+          <input
+            type="password"
+            placeholder="파일 암호 입력 (최소 6자)"
+            value={fileModalPassword}
+            onChange={e => setFileModalPassword(e.target.value)}
+            className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white mb-4"
+          />
+          <button
+            onClick={handlePasswordSubmit}
+            className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg"
+          >
+            확인
+          </button>
+        </div>
+      ) : (
+        <div>
+          {fileModalFiles.length === 0 ? (
+            <div className="text-gray-400">첨부된 파일이 없습니다.</div>
+          ) : (
+            <ul className="space-y-3">
+              {fileModalFiles.map((file: any, idx: number) => (
+                <li key={file.cid || idx} className="flex items-center justify-between bg-black/40 border border-white/10 rounded-lg px-4 py-2">
+                  <span className="text-white text-sm">{file.name || file.cid}</span>
+                  <button
+                    onClick={() => {handleDownloadFile(file); console.log('file', file)}}
+                    className="ml-4 px-3 py-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white rounded-lg text-xs"
+                  >
+                    다운로드
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <button
+        onClick={() => setShowFileModal(false)}
+        className="mt-4 px-4 py-2 bg-white/10 text-white rounded-lg"
+      >
+        닫기
+      </button>
     </div>
   </div>
 )}

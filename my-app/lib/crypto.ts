@@ -278,7 +278,7 @@ export const encryptFile = async (file: File, password: string): Promise<{ encry
     finalCombined.set(nonce, salt.length);
     finalCombined.set(encrypted, salt.length + nonce.length);
     
-    const encryptedData = sodium.to_base64(finalCombined);
+    const encryptedData = sodium.to_base64(finalCombined, sodium.base64_variants.ORIGINAL);
     const fileName = `${file.name}.encrypted`;
     
     return { encryptedData, fileName };
@@ -296,9 +296,14 @@ export const decryptFile = async (encryptedData: string, password: string): Prom
     if (!password || password.length < 6) {
       throw new Error('비밀번호는 최소 6자 이상이어야 합니다.');
     }
-    
+    console.log('encryptedData: ', encryptedData);
+    console.log('password: ', password);
+    console.log('글자수: ', encryptedData.length);
+    //type of encryptedData
+    console.log('type of encryptedData: ', typeof encryptedData);
+    console.log('type of password: ', typeof password);
     // base64 디코딩
-    const combined = sodium.from_base64(encryptedData);
+    const combined = sodium.from_base64(encryptedData, sodium.base64_variants.ORIGINAL);
     
     // salt, nonce, 암호화된 데이터 분리
     const salt = combined.slice(0, sodium.crypto_pwhash_SALTBYTES);

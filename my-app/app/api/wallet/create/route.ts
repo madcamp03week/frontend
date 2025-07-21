@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { encryptPrivateKey } from '../../../../lib/crypto';
 import { adminAuth, adminDb } from '../../../../lib/firebase-admin';
+import { mintChronosToken } from '../../../../lib/blockchain/contract-service';
 
 // 백엔드에서 지갑 생성 및 서버 키로 암호화하는 API
 export async function POST(request: NextRequest) {
@@ -71,6 +72,19 @@ export async function POST(request: NextRequest) {
 
     // 8. 모든 변경사항을 한 번에 커밋
     await batch.commit();
+
+    // 8-1. 지갑 생성 후 10 토큰 자동 민팅
+    mintChronosToken(newWallet.address, 10)
+      .then((result) => {
+        if (!result.success) {
+          console.error('토큰 민팅 실패:', result.error);
+        } else {
+          console.log('토큰 민팅 성공:', result.txHash);
+        }
+      })
+      .catch((err) => {
+        console.error('토큰 민팅 예외:', err);
+      });
 
     // 9. 성공 응답
     return NextResponse.json({

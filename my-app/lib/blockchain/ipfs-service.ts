@@ -50,11 +50,12 @@ export async function uploadIPFSMetadata(chronosData: {
           Body: buffer,
           ContentType: 'text/plain'
         }).promise();
-        // console.log('uploadResult:', uploadResult);
+        console.log('uploadResult:', uploadResult);
         const head = await s3.headObject({ Bucket: bucketName, Key: fileKey }).promise();
         // console.log('head:', head);
         const cid = head.Metadata?.cid || null;
         const ipfsUrl = cid ? `ipfs://${cid}` : uploadResult.Location;
+        
         uploadedFileInfos.push({
           name: file.originalName || file.fileName,
           type: file.fileType,

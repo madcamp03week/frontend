@@ -37,15 +37,18 @@ export async function uploadIPFSMetadata(chronosData: {
     let uploadedFileInfos: Array<{ name: string; type: string; size: number; isEncrypted: boolean; ipfsUrl: string }> = [];
     if (chronosData.encryptedFiles && Array.isArray(chronosData.encryptedFiles)) {
       for (const file of chronosData.encryptedFiles) {
+        console.log('file:', file);
         const buffer = Buffer.from(file.encryptedData, 'base64');
         const fileKey = `chronos_file_${Date.now()}_${file.fileName}`;
         const uploadResult = await s3.upload({
           Bucket: bucketName,
           Key: fileKey,
           Body: buffer,
-          ContentType: file.fileType || 'application/octet-stream'
+          ContentType: 'text/plain'
         }).promise();
+        // console.log('uploadResult:', uploadResult);
         const head = await s3.headObject({ Bucket: bucketName, Key: fileKey }).promise();
+        // console.log('head:', head);
         const cid = head.Metadata?.cid || null;
         const ipfsUrl = cid ? `ipfs://${cid}` : uploadResult.Location;
         uploadedFileInfos.push({
@@ -57,6 +60,8 @@ export async function uploadIPFSMetadata(chronosData: {
         });
       }
     }
+
+    // console.log('uploadedFileInfos:', uploadedFileInfos);
 
     const unopenedMetadata = {
       name: `${chronosData.name} (Unopened)`,
@@ -117,6 +122,8 @@ export async function uploadIPFSMetadata(chronosData: {
     ];
 
     const [unopenedResult, openedResult] = await Promise.all(uploadPromises);
+    console.log('unopenedResult:', unopenedResult);
+    console.log('openedResult:', openedResult);
 
     const unopenedHead = await s3.headObject({
       Bucket: bucketName,
@@ -126,6 +133,9 @@ export async function uploadIPFSMetadata(chronosData: {
       Bucket: bucketName,
       Key: openedFileName
     }).promise();
+
+    console.log('unopenedHead:', unopenedHead);
+    console.log('openedHead:', openedHead);
 
     const unopenedCid = unopenedHead.Metadata?.cid || null;
     const openedCid = openedHead.Metadata?.cid || null;

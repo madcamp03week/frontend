@@ -79,6 +79,10 @@ export async function uploadIPFSMetadata(chronosData: {
         {
           trait_type: "isEncrypted",
           value: chronosData.isEncrypted
+        },
+        {
+          trait_type: "isOpened",
+          value: false
         }
       ],
       properties: {
@@ -98,6 +102,10 @@ export async function uploadIPFSMetadata(chronosData: {
         {
           trait_type: "isEncrypted",
           value: chronosData.isEncrypted
+        },
+        {
+          trait_type: "isOpened",
+          value: true
         }
       ],
       properties: {

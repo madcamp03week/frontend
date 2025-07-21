@@ -541,6 +541,9 @@ useEffect(() => {
   {transferResult && transferingId !== chronos.tokenId && (
     <p className="mt-1 text-xs text-green-300">✔︎ {transferResult.slice(0,10)}…</p>
     )}
+      {transferResult && transferingId !== chronos.tokenId && (
+      <p className="mt-1 text-xs text-green-300">✔︎ 전송 완료! TX: {transferResult.slice(0,10)}…</p>
+      )}
       </td>
 
 

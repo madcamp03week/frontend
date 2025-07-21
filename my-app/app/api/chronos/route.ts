@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       encryptedFiles // 배열
       // userId는 여기서 제외
     } = body;
+
+    console.log('openDate:', openDate);
     
     if (!name) {
       return NextResponse.json(

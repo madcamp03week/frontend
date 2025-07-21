@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
         isRecipient: true, // 수신자 문서임을 표시
         originalCreator: userId, // 원본 생성자
         totalRecipients: userWalletAddresses.length, // 총 수신자 수
-        recipientIndex: userWalletAddresses.indexOf(recipientAddress) // 수신자 순서
+        recipientIndex: userWalletAddresses.indexOf(recipientAddress), // 수신자 순서
+        likeCount: 0 // 좋아요 카운트 초기값
       };
 
       // Firestore에 타임캡슐 저장

@@ -384,7 +384,8 @@ useEffect(() => {
     try {
       if (!fileModalIsEncrypted) {
         // 암호화 안된 파일: 바로 다운로드
-        const url = `https://petite-amaranth-bonobo.myfilebase.com/ipfs/${cid}`;
+        const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+        const url = `${gateway}${cid}`;
         console.log('url', url);
         const response = await fetch(url);
         if (!response.ok) throw new Error('파일 다운로드 실패');
@@ -399,7 +400,8 @@ useEffect(() => {
           setFileModalError('비밀번호를 입력하세요.');
           return;
         }
-        const url = `https://petite-amaranth-bonobo.myfilebase.com/ipfs/${cid}`;
+        const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+        const url = `${gateway}${cid}`;
         const response = await fetch(url);
         const arrayBuffer = await response.arrayBuffer();
 
@@ -459,7 +461,7 @@ useEffect(() => {
       <Navigation />
 
       {/* 메인 컨텐츠 */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <div>
@@ -539,42 +541,23 @@ useEffect(() => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed">
               <thead className="bg-gradient-to-r from-white/10 to-white/5">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    순번
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    제목
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    지정된 날짜
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    열림 여부
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    Chronos 열기
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    내용 보기
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    전송
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white border-b border-white/20">
-                    OpenSea에서 확인하기
-                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-12 whitespace-nowrap">순번</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-40 whitespace-nowrap">Chronos 제목</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-40 whitespace-nowrap">Chronos 열기 날짜</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-24 whitespace-nowrap">Chronos 열기</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-24 whitespace-nowrap">Chronos 확인</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-24 whitespace-nowrap">Chronos 전송</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-white border-b border-white/20 w-40 whitespace-nowrap">OpenSea에서 확인</th>
                 </tr>
               </thead>
               <tbody>
                 {chronosList.map((chronos, index) => (
                   <tr key={chronos.id || index} className="border-b border-white/10 hover:bg-white/5 transition-all duration-300">
-                    <td className="px-6 py-4 text-sm text-gray-300">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white font-medium">
+                    <td className="px-6 py-4 text-sm text-center text-gray-300 w-12 whitespace-nowrap">{index + 1}</td>
+                    <td className="px-6 py-4 text-sm text-white font-medium w-40 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
                         {chronos.imageUrl && (
                           <img 
@@ -587,14 +570,14 @@ useEffect(() => {
                           />
                         )}
                         <div>
-                          <div>{chronos.name}</div>
+                          <div className="truncate max-w-[140px]">{chronos.name}</div>
                           {chronos.tokenId && (
                             <div className="text-xs text-gray-400">Token ID: {chronos.tokenId}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300">
+                    <td className="px-6 py-4 text-sm text-gray-300 w-40 whitespace-nowrap">
                       <div>
                         <div>{chronos.openDate ? new Date(chronos.openDate).toLocaleString('ko-KR') : '날짜 미정'}</div>
                         <div className="text-xs text-gray-400 mt-1">
@@ -615,12 +598,8 @@ useEffect(() => {
                         </div>
                       </div>
                     </td>
-                    {/* 열림 여부 컬럼 */}
-                    <td className="px-6 py-4 text-sm text-gray-300">
-                      {chronos.isOpened ? '열림' : '닫힘'}
-                    </td>
                     {/* Chronos 열기 버튼 조건부 렌더링 */}
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 w-32 whitespace-nowrap">
                       {chronos.isOpened ? (
                         <button className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-500/30 text-green-400 rounded-xl transition-all duration-300 text-sm shadow-lg cursor-not-allowed" disabled>
                           <div className="flex items-center space-x-2">
@@ -645,7 +624,7 @@ useEffect(() => {
                               <svg className="w-4 h-4 animate-spin-reverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
-                              <span>열기 중...</span>
+                              <span>열기</span>
                             </div>
                           ) : (
                             <div className="flex items-center space-x-2">
@@ -660,7 +639,7 @@ useEffect(() => {
                         <button className="px-4 py-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400 rounded-xl transition-all duration-300 text-sm shadow-lg cursor-not-allowed" disabled>
                           <div className="flex items-center space-x-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
                             </svg>
                             <span>잠김</span>
                           </div>
@@ -668,21 +647,25 @@ useEffect(() => {
                       )}
                     </td>
                     {/* 내용 보기 버튼 조건부 렌더링 */}
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 w-24 whitespace-nowrap">
                       <button
                         onClick={() => handleViewFiles(chronos.tokenId)}
                         disabled={!(chronos.isOpened && chronos.openDate && new Date(chronos.openDate) <= new Date())}
-                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-sm shadow-lg ${
+                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-sm shadow-lg flex items-center ${
                           chronos.isOpened && chronos.openDate && new Date(chronos.openDate) <= new Date()
                             ? 'bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white hover:shadow-white/10'
                             : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400 cursor-not-allowed'
                         }`}
                       >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
                         보기
                       </button>
                     </td>
                     {/* 테이블 각 행의 전송 버튼만 */}
-<td className="px-6 py-4">
+<td className="px-6 py-4 w-24 whitespace-nowrap">
   <button
     onClick={() => {
       setModalTokenId(chronos.tokenId);
@@ -690,22 +673,31 @@ useEffect(() => {
       setModalToAddress('');
       setShowTransferModal(true);
     }}
-    className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white rounded-xl text-sm transition duration-200 shadow-lg"
+    className={`px-4 py-2 rounded-xl transition-all duration-300 text-sm shadow-lg flex items-center
+      bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30
+      text-white hover:shadow-white/10`}
   >
+    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    </svg>
     전송
   </button>
 </td>
 
-                 <td className="px-6 py-4">
-                      <a 
-                        href={chronos.permalink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white rounded-xl transition-all duration-300 text-sm shadow-lg hover:shadow-white/10 inline-block"
-                      >
-                        OpenSea
-                      </a>
-                    </td>
+                 <td className="px-6 py-4 w-40 whitespace-nowrap text-center">
+  <a
+    href={chronos.permalink}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-32 flex items-center justify-center mx-auto px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 text-white rounded-xl transition-all duration-300 text-sm shadow-lg hover:shadow-white/10"
+  >
+    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+    </svg>
+
+    OpenSea
+  </a>
+</td>
                   </tr>
                 ))}
               </tbody>
@@ -786,7 +778,14 @@ useEffect(() => {
               placeholder="받는 사람 이메일"
               value={modalEmail}
               onChange={e => setModalEmail(e.target.value.trim())}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 hover:border-purple-400 hover:ring-2 hover:ring-purple-400/20 transition-all pr-10"
+              className={
+                (
+                  "w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 hover:border-purple-400 hover:ring-2 hover:ring-purple-400/20 transition-all pr-10 " +
+                  ((modalEmail.length > 0 && (!modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) || emailExists === false))
+                    ? "border-red-500"
+                    : "border-gray-700/50")
+                )
+              }
             />
             {modalEmail.length > 0 && (
               modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? (

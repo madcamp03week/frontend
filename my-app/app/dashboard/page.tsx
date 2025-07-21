@@ -56,6 +56,10 @@ export default function DashboardPage() {
   const [nicknameLoading, setNicknameLoading] = useState(false);
   const [showInactiveWallets, setShowInactiveWallets] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [tokenBalance, setTokenBalance] = useState<number>(0);      // CHRONOS 토큰 잔액
+  const [polBalance, setPolBalance]     = useState<string>('0.00'); // POL 잔액
+  const [estimatedPolBalance, setEstimatedPolBalance] = useState<string>('0.00'); // 예상 POL 잔액
+  const [loadingBalances, setLoadingBalances] = useState(false);   
   const [transactionStats, setTransactionStats] = useState({
     total: 0,
     success: 0,
@@ -67,6 +71,35 @@ export default function DashboardPage() {
   });
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const router = useRouter();
+
+  const fetchBalances = async () => {
+  const active = wallets.find(w => w.isActive);
+  if (!active) return;
+
+  setLoadingBalances(true);
+  try {
+    const resToken = await fetch('/api/wallet/token-balance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: active.address }),
+    });
+    const dataToken = await resToken.json();
+    if (dataToken.success) {
+      const amount = Number(dataToken.balance);
+      setTokenBalance(amount);
+      // 초기 POL 계산 (10 CHRONOS = 0.1 POL)
+      setPolBalance((amount * 0.01).toFixed(2));
+    }
+  } catch (err) {
+    console.error('잔액 조회 오류:', err);
+  } finally {
+    setLoadingBalances(false);
+  }
+};const handleConvert = () => {
+  // 버튼 클릭 시 POL 재계산
+  setPolBalance((tokenBalance * 0.01).toFixed(2));
+};
+
 
   // 사용자 프로필이 로드되면 닉네임 상태 초기화
   useEffect(() => {
@@ -254,7 +287,7 @@ export default function DashboardPage() {
       <Navigation />
 
       {/* 메인 컨텐츠 */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <div className="mb-12">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent animate-pulse">
             대시보드
@@ -397,6 +430,75 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 잔고 카드 (분리된 부분) */}
+        <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-8">
+          <div className="p-8">
+            <div className="flex items-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center mr-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
+                잔고
+              </h3>
+            </div>
+            {loadingBalances ? (
+              <div className="text-center py-4">
+                <p className="text-gray-400 animate-pulse">잔액을 불러오는 중...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row items-center justify-center gap-0">
+                {/* 왼쪽: 보유 토큰 ≈ 예상 POL */}
+                <div className="w-full md:w-1/2 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/10 py-6">
+                  <div className="flex flex-row items-center justify-center gap-4 w-full">
+                    {/* 보유 토큰 */}
+                    <div className="flex flex-col items-center min-w-[90px]">
+                      <p className="text-sm text-gray-300 mb-1">보유 토큰</p>
+                      <p className="text-3xl font-bold text-white">
+                        {tokenBalance.toLocaleString()} <span className="text-lg text-gray-400">CR</span>
+                      </p>
+                    </div>
+                    {/* ≈ 기호 */}
+                    <div className="text-2xl text-gray-400 mx-2">≈</div>
+                    {/* 예상 POL */}
+                    <div className="flex flex-col items-center min-w-[90px]">
+                      <p className="text-sm text-gray-300 mb-1">예상 POL</p>
+                      <p className="text-3xl font-bold text-cyan-300">
+                        {estimatedPolBalance} <span className="text-lg text-gray-400">POL</span>
+                      </p>
+                    </div>
+                    {/* 변환식 */}
+                    {/* <div className="flex flex-col items-center min-w-[110px] ml-4">
+                      <p className="text-xs text-gray-500 mt-4 whitespace-nowrap">10 CR = 0.1 POL</p>
+                    </div> */}
+                  </div>
+                </div>
+                {/* 오른쪽: 보유 POL */}
+                <div className="w-full md:w-1/2 flex flex-col items-center justify-center py-6">
+                  <p className="text-sm text-gray-300 mb-2">보유 POL</p>
+                  <p className="text-3xl font-bold">
+                    {polBalance} <span className="text-lg text-gray-400">POL</span>
+                  </p>
+                </div>
+              </div>
+            )}
+            {/* 변환 버튼 */}
+            <div className="mt-6">
+              <button
+                onClick={handleConvert}
+                disabled={loadingBalances}
+                className="group w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 hover:border-cyan-400/50 text-cyan-300 hover:text-cyan-200 font-semibold rounded-2xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 transform hover:scale-[1.02]"
+              >
+                <svg className="w-5 h-5 mr-3 group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                새로고침
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* 폴리곤 지갑 정보 */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-8">
           <div className="p-8">
@@ -493,7 +595,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                
+
                 {/* 비활성 지갑이 있는 경우 표시 */}
                 {wallets.filter(wallet => !wallet.isActive).length > 0 && (
                   <div className="backdrop-blur-sm bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6">

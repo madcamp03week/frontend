@@ -559,12 +559,10 @@ export default function NewChronosPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
-                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
-                    if (dateInput.value && timeInput.value) {
-                      const currentDate = new Date(dateInput.value);
+                    if (defaultDate) {
+                      const currentDate = new Date(defaultDate);
                       currentDate.setDate(currentDate.getDate() + 1);
-                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      setDefaultDate(currentDate.toISOString().slice(0, 10));
                       // 시간은 그대로 유지
                     }
                   }}
@@ -575,12 +573,10 @@ export default function NewChronosPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
-                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
-                    if (dateInput.value && timeInput.value) {
-                      const currentDate = new Date(dateInput.value);
+                    if (defaultDate) {
+                      const currentDate = new Date(defaultDate);
                       currentDate.setMonth(currentDate.getMonth() + 1);
-                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      setDefaultDate(currentDate.toISOString().slice(0, 10));
                       // 시간은 그대로 유지
                     }
                   }}
@@ -591,12 +587,10 @@ export default function NewChronosPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
-                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
-                    if (dateInput.value && timeInput.value) {
-                      const currentDate = new Date(dateInput.value);
+                    if (defaultDate) {
+                      const currentDate = new Date(defaultDate);
                       currentDate.setFullYear(currentDate.getFullYear() + 1);
-                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      setDefaultDate(currentDate.toISOString().slice(0, 10));
                       // 시간은 그대로 유지
                     }
                   }}
@@ -607,12 +601,10 @@ export default function NewChronosPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
-                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
-                    if (dateInput.value && timeInput.value) {
-                      const currentDate = new Date(dateInput.value);
+                    if (defaultDate) {
+                      const currentDate = new Date(defaultDate);
                       currentDate.setFullYear(currentDate.getFullYear() + 10);
-                      dateInput.value = currentDate.toISOString().slice(0, 10);
+                      setDefaultDate(currentDate.toISOString().slice(0, 10));
                       // 시간은 그대로 유지
                     }
                   }}
@@ -623,12 +615,10 @@ export default function NewChronosPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const dateInput = document.getElementById('openDate') as HTMLInputElement;
-                    const timeInput = document.getElementById('openTime') as HTMLInputElement;
                     const now = new Date();
                     const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-                    dateInput.value = kst.toISOString().slice(0, 10);
-                    timeInput.value = kst.toISOString().slice(11, 16);
+                    setDefaultDate(kst.toISOString().slice(0, 10));
+                    setDefaultTime(kst.toISOString().slice(11, 16));
                   }}
                   className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-300 hover:text-cyan-200 rounded-lg transition-all duration-300 text-sm"
                 >

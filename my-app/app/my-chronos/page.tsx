@@ -76,19 +76,26 @@ const handleTransfer = async (
   setTransferResult(null);
 
   try {
-    const res = await fetch('/api/my-chronos/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fromAddress,
-        tokenId,
-        contractAddress,
-        // 모드에 따라 email 또는 toAddress 중 하나만 넘김
-        ...(sendByEmail 
-           ? { email: modalEmail } 
-           : { toAddress })
-      })
-    });
+const idToken = user ? await user.getIdToken() : null;
+
+const res = await fetch('/api/my-chronos/send', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    ...(idToken && { 'Authorization': `Bearer ${idToken}` })
+  },
+  body: JSON.stringify({
+    // fromAddress 는 서버에서 실제 소유자 검증 시에만 필요하므로
+    // 서버 코드가 UID 검증 이후에 직접 조회하도록 변경했다면
+    // 클라이언트에서는 tokenId, contractAddress, toAddress/email 만 보내면 됩니다.
+    tokenId,
+    contractAddress,
+    ...(sendByEmail 
+       ? { email: modalEmail } 
+       : { toAddress })
+  })
+});
+
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || '전송 실패');
     setTransferResult(json.txHashes?.[0] || json.txHash);

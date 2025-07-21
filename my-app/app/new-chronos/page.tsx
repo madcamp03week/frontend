@@ -147,6 +147,15 @@ export default function NewChronosPage() {
             
             // content 파일 암호화
             const encryptedContent = await encryptFile(contentFileObj, password);
+            console.log('🔐 Content 파일 암호화 결과:', {
+              fileName: encryptedContent.fileName,
+              originalName: 'content.txt',
+              fileSize: contentFileObj.size,
+              fileType: 'text/plain',
+              isEncrypted: true,
+              encryptedDataLength: encryptedContent.encryptedData.length,
+              encryptedDataPreview: encryptedContent.encryptedData.substring(0, 100) + '...'
+            });
             allFiles.push({
               encryptedData: encryptedContent.encryptedData,
               fileName: encryptedContent.fileName,
@@ -170,6 +179,15 @@ export default function NewChronosPage() {
             try {
               // 첨부파일 암호화
               const result = await encryptFile(file, password);
+              console.log(`🔐 첨부파일 ${file.name} 암호화 결과:`, {
+                fileName: result.fileName,
+                originalName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                isEncrypted: true,
+                encryptedDataLength: result.encryptedData.length,
+                encryptedDataPreview: result.encryptedData.substring(0, 100) + '...'
+              });
               return {
                 encryptedData: result.encryptedData,
                 fileName: result.fileName,
@@ -194,6 +212,12 @@ export default function NewChronosPage() {
         const encryptEndTime = Date.now();
         const encryptDuration = encryptEndTime - encryptStartTime;
         const minWaitTime = 3000; // 3초
+        
+        console.log('🔐 전체 암호화 완료:', {
+          totalFiles: allFiles.length,
+          encryptDuration: `${encryptDuration}ms`,
+          minWaitTime: `${minWaitTime}ms`
+        });
         
         if (encryptDuration < minWaitTime) {
           const remainingTime = minWaitTime - encryptDuration;
@@ -267,6 +291,15 @@ export default function NewChronosPage() {
             
             // 암호화하지 않음 - base64로 인코딩
             const base64Data = await fileToBase64(contentFileObj);
+            console.log('📄 Content 파일 base64 인코딩 결과:', {
+              fileName: 'content.txt',
+              originalName: 'content.txt',
+              fileSize: contentFileObj.size,
+              fileType: 'text/plain',
+              isEncrypted: false,
+              base64DataLength: base64Data.length,
+              base64DataPreview: base64Data.substring(0, 100) + '...'
+            });
             allFiles.push({
               encryptedData: base64Data,
               fileName: 'content.txt',
@@ -290,6 +323,15 @@ export default function NewChronosPage() {
             try {
               // 암호화하지 않음 - base64로 인코딩
               const base64Data = await fileToBase64(file);
+              console.log(`📄 첨부파일 ${file.name} base64 인코딩 결과:`, {
+                fileName: file.name,
+                originalName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                isEncrypted: false,
+                base64DataLength: base64Data.length,
+                base64DataPreview: base64Data.substring(0, 100) + '...'
+              });
               return {
                 encryptedData: base64Data,
                 fileName: file.name,
@@ -305,41 +347,65 @@ export default function NewChronosPage() {
             }
           });
 
-          const attachmentResults = await Promise.all(attachmentPromises);
-          const successfulAttachments = attachmentResults.filter(result => result !== null);
-          allFiles.push(...successfulAttachments);
-        }
+        const attachmentResults = await Promise.all(attachmentPromises);
+        const successfulAttachments = attachmentResults.filter(result => result !== null);
+        allFiles.push(...successfulAttachments);
+      }
 
-        // 2단계: 블록체인에 기록
-        setLoadingStep('blockchain');
+      // 2단계: 블록체인에 기록
+      setLoadingStep('blockchain');
 
-        // 사용자의 활성 지갑 주소들만 추출
-        const userWalletAddresses = wallets
-          .filter(wallet => wallet.isActive)
-          .map(wallet => wallet.address);
-        
-        // 타임캡슐 데이터 준비
-        const chronosData = {
-          name,
-          description,
-          content,
-          openDate: (document.getElementById('openDate') as HTMLInputElement)?.value || null,
-          isEncrypted,
-          password: isEncrypted ? password : null,
-          isPublic,
-          tags,
-          enhancedSecurity,
-          n: enhancedSecurity ? n : null,
-          m: enhancedSecurity ? m : null,
-          isTransferable,
-          isSmartContractTransferable,
-          isSmartContractOpenable,
-          userId: user?.uid || 'anonymous',
-          walletAddresses: userWalletAddresses,
-          encryptedFiles: allFiles
-        };
+      // 사용자의 활성 지갑 주소들만 추출
+      const userWalletAddresses = wallets
+        .filter(wallet => wallet.isActive)
+        .map(wallet => wallet.address);
+      
+      // 타임캡슐 데이터 준비
+      const chronosData = {
+        name,
+        description,
+        content,
+        openDate: (document.getElementById('openDate') as HTMLInputElement)?.value || null,
+        isEncrypted,
+        password: isEncrypted ? password : null,
+        isPublic,
+        tags,
+        enhancedSecurity,
+        n: enhancedSecurity ? n : null,
+        m: enhancedSecurity ? m : null,
+        isTransferable,
+        isSmartContractTransferable,
+        isSmartContractOpenable,
+        userId: user?.uid || 'anonymous',
+        walletAddresses: userWalletAddresses,
+        encryptedFiles: allFiles
+      };
 
-        // API 호출
+      console.log('📦 타임캡슐 데이터 (암호화 없음):', {
+        name,
+        description,
+        content: content.substring(0, 100) + '...',
+        openDate: chronosData.openDate,
+        isEncrypted,
+        isPublic,
+        tags,
+        enhancedSecurity,
+        n: chronosData.n,
+        m: chronosData.m,
+        userId: chronosData.userId,
+        walletAddresses: chronosData.walletAddresses,
+        totalFiles: allFiles.length,
+        filesInfo: allFiles.map(file => ({
+          fileName: file.fileName,
+          originalName: file.originalName,
+          fileSize: file.fileSize,
+          fileType: file.fileType,
+          isEncrypted: file.isEncrypted,
+          dataLength: file.encryptedData.length
+        }))
+      });
+
+      // API 호출
         const response = await fetch('/api/chronos', {
           method: 'POST',
           headers: {
@@ -437,12 +503,13 @@ export default function NewChronosPage() {
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
               <label htmlFor="openDate" className="block text-lg font-medium text-white">
-                열기 날짜
+                열기 날짜 *
               </label>
             </div>
             <input
               id="openDate"
               type="datetime-local"
+              required
               className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300"
             />
           </div>

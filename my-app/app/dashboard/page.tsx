@@ -569,7 +569,7 @@ export default function DashboardPage() {
                     
                     <p className="text-gray-300 leading-relaxed mt-4">
                       새로운 지갑을 발급하면 기존 타임캡슐에 대한 접근 권한이 완전히 소실됩니다. 
-                      이 작업은 되돌릴 수 없습니다.
+                      이 작업은 되돌릴 수 없습니다. 발급 전 Private Key를 백업하세요.
                     </p>
                   </div>
                 )}

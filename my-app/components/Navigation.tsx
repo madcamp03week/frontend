@@ -44,6 +44,7 @@ export default function Navigation() {
         <Link href="/product">Product</Link>
         <Link href="/new-chronos">New Chronos</Link>
         <Link href="/my-chronos">My Chronos</Link>
+        <Link href="/file-encryption-test">암호화 테스트</Link>
         {isClient && !shouldShowLoading && (
           isUserLoggedIn ? (
             <>

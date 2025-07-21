@@ -51,7 +51,11 @@ export default function Navigation() {
                 onClick={async () => {
                   try {
                     await logout();
-                    router.push('/');
+                    if (window.location.pathname === '/') {
+                      window.location.reload();
+                    } else {
+                      router.push('/');
+                    }
                   } catch (error) {
                     console.error('로그아웃 중 오류:', error);
                   }

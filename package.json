@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.848.0",
     "libsodium-wrappers-sumo": "^0.7.15"
   }
 }

@@ -8,6 +8,7 @@ import LoginRequired from '../../components/LoginRequired';
 import Navigation from '../../components/Navigation';
 import { openTimeCapsule } from '../../lib/blockchain';
 
+
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
   if (typeof window === 'undefined') return null;
@@ -44,9 +45,34 @@ const [modalContractAddress, setModalContractAddress] = useState<string>('');
 const [modalToAddress, setModalToAddress] = useState<string>('');
 const [sendByEmail, setSendByEmail] = useState(false);
 const [modalEmail, setModalEmail] = useState<string>('');
+const [emailExists, setEmailExists] = useState<boolean | null>(null);
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
   );
+
+
+  useEffect(() => {
+  if (!sendByEmail) return;
+  // 이메일 포맷 먼저 체크
+  const isFormatValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modalEmail);
+  if (!isFormatValid) {
+    setEmailExists(null);
+    return;
+  }
+
+  let cancelled = false;
+  fetch(`/api/auth/check-email?email=${encodeURIComponent(modalEmail)}`)
+    .then(res => {
+      if (cancelled) return;
+      setEmailExists(res.ok);
+    })
+    .catch(() => {
+      if (!cancelled) setEmailExists(false);
+    });
+
+  return () => { cancelled = true; };
+}, [modalEmail, sendByEmail]);
+
 // 페이지 상단에 선언되어 있는 handleTransfer
 const handleTransfer = async (
   tokenId: string,
@@ -96,11 +122,19 @@ const res = await fetch('/api/my-chronos/send', {
   })
 });
 
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || '전송 실패');
-    setTransferResult(json.txHashes?.[0] || json.txHash);
-    fetchChronosList();
-  } catch (err: any) {
+   const json = await res.json();
+   if (!res.ok) {
+     // 이메일 모드에서 404 → “유효하지 않은 이메일입니다.”
+     if (sendByEmail && res.status === 404) {
+       setTransferError('유효하지 않은 이메일입니다.');
+     } else {
+       setTransferError(json.error || '전송 실패');
+     }
+     return;
+   }
+   setTransferResult(json.txHashes?.[0] || json.txHash);
+   // 전송 성공 후 목록 새로고침
+   fetchChronosList();  } catch (err: any) {
     setTransferError(err.message);
   } finally {
     setTransferingId(null);
@@ -613,13 +647,39 @@ useEffect(() => {
           className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
         />
       ) : (
-        <input
-          type="email"
-          placeholder="받는 사람 이메일"
-          value={modalEmail}
-          onChange={e => setModalEmail(e.target.value.trim())}
-          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white"
-        />
+      <div className="relative">
+    <input
+      type="email"
+      placeholder="받는 사람 이메일"
+      value={modalEmail}
+      onChange={e => setModalEmail(e.target.value.trim())}
+      className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-lg text-white pr-10"
+   />
+    {modalEmail.length > 0 && (
+     modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? (
+        /* 이메일 포맷 OK → 초록 체크 */
+        <svg
+          className="w-5 h-5 text-green-400 absolute right-3 top-1/2 -translate-y-1/2"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+     ) : (
+        /* 이메일 포맷 NG → 빨간 ✕ */
+        <svg
+          className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      )
+    )}
+  </div>
+
       )}
 
       <div className="flex justify-center space-x-3">
@@ -629,44 +689,33 @@ useEffect(() => {
         >
           취소
         </button>
-        <button
-          onClick={async () => {
-            await handleTransfer(
-              modalTokenId,
-              modalContractAddress,
-              modalToAddress,
-              modalEmail
-            );
-            setShowTransferModal(false);
-          }}
-          disabled={
-            transferingId === modalTokenId ||
-            (sendByEmail
-              ? !modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
-              : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
-          }
-          className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
-        >
-{transferingId === modalTokenId ? (
-      <div className="flex items-center space-x-2">
-        <svg
-          className="w-4 h-4 animate-spin"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 4v5h.582m15.356 2A8 8 0 004.582 9M9 9h5m-1-1v6m0 0h.01"
-          />
-        </svg>
-        <span>전송중…</span>
-      </div>
-    ) : (
-      '전송하기'
-    )}</button>
+
+<button
+  onClick={async () => {
+    await handleTransfer(
+      modalTokenId,
+      modalContractAddress,
+      modalToAddress,
+      modalEmail
+    );
+    setShowTransferModal(false);
+  }}
+  disabled={
+    transferingId === modalTokenId ||
+    (sendByEmail
+      ? (
+          // 이메일 모드: 포맷이 틀리거나, DB에 없는 경우 비활성
+          !modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ||
+          emailExists === false
+        )
+      : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
+  }
+  className="px-4 py-2 bg-gradient-to-r from-white/10 to-white/5 text-white rounded-lg disabled:opacity-50"
+>
+  {transferingId === modalTokenId ? '전송중…' : '전송하기'}
+</button>
+
+
       </div>
 
       {transferError && (

@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginRequired from '../../components/LoginRequired';
 import Navigation from '../../components/Navigation';
+import { encryptFile } from '../../lib/crypto';
 
 // localStorage에서 사용자 정보를 확인하는 함수
 const getCachedUserInfo = () => {
@@ -23,6 +24,9 @@ const getCachedUserInfo = () => {
     return null;
   }
 };
+
+// 파일 크기 제한 (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 export default function NewChronosPage() {
   // 모든 훅은 컴포넌트 최상단에서 한 번만 호출
@@ -45,9 +49,18 @@ export default function NewChronosPage() {
   const [tags, setTags] = useState('');
   const [manualAddress, setManualAddress] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [encryptedFiles, setEncryptedFiles] = useState<Array<{ 
+    encryptedData?: string; 
+    fileName: string; 
+    originalName: string;
+    fileSize: number;
+    fileType: string;
+    isEncrypted: boolean;
+  }>>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const toastTimeout = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<'encrypting' | 'blockchain' | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
   
   // 새로운 토글 상태들
@@ -70,10 +83,278 @@ export default function NewChronosPage() {
     toastTimeout.current = setTimeout(() => setToast(null), 2500);
   };
 
+  // 파일 크기 검증
+  const validateFileSize = (file: File): boolean => {
+    if (file.size > MAX_FILE_SIZE) {
+      showToast(`파일 크기가 너무 큽니다. 최대 ${MAX_FILE_SIZE / 1024 / 1024}MB까지 업로드 가능합니다.`, 'error');
+      return false;
+    }
+    return true;
+  };
+
+  // 파일을 base64로 인코딩하는 함수
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // data:image/jpeg;base64, 부분을 제거하고 base64 데이터만 추출
+        const base64Data = result.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // 파일 업로드 처리 (첨부 시에는 암호화하지 않음)
+  const handleFileUpload = async (files: File[]) => {
+    const validFiles = files.filter(validateFileSize);
+    
+    if (validFiles.length === 0) return;
+
+    // 파일 첨부 시에는 암호화하지 않고 바로 추가
+    setAttachments(prev => [...prev, ...validFiles]);
+    showToast(`${validFiles.length}개 파일이 추가되었습니다.`, 'success');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); // 로딩 시작
+    
     try {
+      // 1단계: 파일 암호화 (isEncrypted가 true일 때만)
+      if (isEncrypted) {
+        setLoadingStep('encrypting');
+        const encryptStartTime = Date.now();
+        
+        // 모든 파일을 처리 (content + 첨부파일)
+        let allFiles: Array<{ 
+          encryptedData: string; 
+          fileName: string; 
+          originalName: string;
+          fileSize: number;
+          fileType: string;
+          isEncrypted: boolean;
+        }> = [];
+        
+        // 1. Content 파일 처리
+        if (content.trim()) {
+          try {
+            // content를 Blob으로 변환하여 File 객체 생성
+            const contentBlob = new Blob([content], { type: 'text/plain' });
+            const contentFileObj = new File([contentBlob], 'content.txt', { type: 'text/plain' });
+            
+            // content 파일 암호화
+            const encryptedContent = await encryptFile(contentFileObj, password);
+            console.log('🔐 Content 파일 암호화 결과:', {
+              fileName: encryptedContent.fileName,
+              originalName: 'content.txt',
+              fileSize: contentFileObj.size,
+              fileType: 'text/plain',
+              isEncrypted: true,
+              encryptedDataLength: encryptedContent.encryptedData.length,
+              encryptedDataPreview: encryptedContent.encryptedData.substring(0, 100) + '...'
+            });
+            allFiles.push({
+              encryptedData: encryptedContent.encryptedData,
+              fileName: encryptedContent.fileName,
+              originalName: 'content.txt',
+              fileSize: contentFileObj.size,
+              fileType: 'text/plain',
+              isEncrypted: true
+            });
+          } catch (error) {
+            console.error('content 파일 처리 실패:', error);
+            showToast('내용 처리에 실패했습니다.', 'error');
+            setLoading(false);
+            setLoadingStep(null);
+            return;
+          }
+        }
+
+        // 2. 첨부파일 처리
+        if (attachments.length > 0) {
+          const attachmentPromises = attachments.map(async (file, index) => {
+            try {
+              // 첨부파일 암호화
+              const result = await encryptFile(file, password);
+              console.log(`🔐 첨부파일 ${file.name} 암호화 결과:`, {
+                fileName: result.fileName,
+                originalName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                isEncrypted: true,
+                encryptedDataLength: result.encryptedData.length,
+                encryptedDataPreview: result.encryptedData.substring(0, 100) + '...'
+              });
+              return {
+                encryptedData: result.encryptedData,
+                fileName: result.fileName,
+                originalName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                isEncrypted: true
+              };
+            } catch (error) {
+              console.error(`첨부파일 ${file.name} 처리 실패:`, error);
+              showToast(`첨부파일 ${file.name} 처리에 실패했습니다.`, 'error');
+              return null;
+            }
+          });
+
+          const attachmentResults = await Promise.all(attachmentPromises);
+          const successfulAttachments = attachmentResults.filter(result => result !== null);
+          allFiles.push(...successfulAttachments);
+        }
+
+        // 암호화 완료 후 최소 3초간 대기
+        const encryptEndTime = Date.now();
+        const encryptDuration = encryptEndTime - encryptStartTime;
+        const minWaitTime = 3000; // 3초
+        
+        console.log('🔐 전체 암호화 완료:', {
+          totalFiles: allFiles.length,
+          encryptDuration: `${encryptDuration}ms`,
+          minWaitTime: `${minWaitTime}ms`
+        });
+        
+        if (encryptDuration < minWaitTime) {
+          const remainingTime = minWaitTime - encryptDuration;
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
+        // 2단계: 블록체인에 기록
+        setLoadingStep('blockchain');
+
+        // 사용자의 활성 지갑 주소들만 추출
+        const userWalletAddresses = wallets
+          .filter(wallet => wallet.isActive)
+          .map(wallet => wallet.address);
+        
+        // 타임캡슐 데이터 준비
+        const chronosData = {
+          name,
+          description,
+          content,
+          openDate: (document.getElementById('openDate') as HTMLInputElement)?.value || null,
+          isEncrypted,
+          password: isEncrypted ? password : null,
+          isPublic,
+          tags,
+          enhancedSecurity,
+          n: enhancedSecurity ? n : null,
+          m: enhancedSecurity ? m : null,
+          isTransferable,
+          isSmartContractTransferable,
+          isSmartContractOpenable,
+          userId: user?.uid || 'anonymous',
+          walletAddresses: userWalletAddresses,
+          encryptedFiles: allFiles
+        };
+
+        // API 호출
+        const response = await fetch('/api/chronos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(chronosData),
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          showToast('타임캡슐이 성공적으로 생성되었습니다!', 'success');
+          setTimeout(() => {
+            router.push('/my-chronos');
+          }, 1200);
+        } else {
+          showToast(`타임캡슐 생성 실패: ${result.error}`, 'error');
+        }
+      } else {
+        // 암호화하지 않는 경우
+        let allFiles: Array<{ 
+          encryptedData: string; 
+          fileName: string; 
+          originalName: string;
+          fileSize: number;
+          fileType: string;
+          isEncrypted: boolean;
+        }> = [];
+        
+        // 1. Content 파일 처리
+        if (content.trim()) {
+          try {
+            // content를 Blob으로 변환하여 File 객체 생성
+            const contentBlob = new Blob([content], { type: 'text/plain' });
+            const contentFileObj = new File([contentBlob], 'content.txt', { type: 'text/plain' });
+            
+            // 암호화하지 않음 - base64로 인코딩
+            const base64Data = await fileToBase64(contentFileObj);
+            console.log('📄 Content 파일 base64 인코딩 결과:', {
+              fileName: 'content.txt',
+              originalName: 'content.txt',
+              fileSize: contentFileObj.size,
+              fileType: 'text/plain',
+              isEncrypted: false,
+              base64DataLength: base64Data.length,
+              base64DataPreview: base64Data.substring(0, 100) + '...'
+            });
+            allFiles.push({
+              encryptedData: base64Data,
+              fileName: 'content.txt',
+              originalName: 'content.txt',
+              fileSize: contentFileObj.size,
+              fileType: 'text/plain',
+              isEncrypted: false
+            });
+          } catch (error) {
+            console.error('content 파일 처리 실패:', error);
+            showToast('내용 처리에 실패했습니다.', 'error');
+            setLoading(false);
+            setLoadingStep(null);
+            return;
+          }
+        }
+
+        // 2. 첨부파일 처리
+        if (attachments.length > 0) {
+          const attachmentPromises = attachments.map(async (file, index) => {
+            try {
+              // 암호화하지 않음 - base64로 인코딩
+              const base64Data = await fileToBase64(file);
+              console.log(`📄 첨부파일 ${file.name} base64 인코딩 결과:`, {
+                fileName: file.name,
+                originalName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                isEncrypted: false,
+                base64DataLength: base64Data.length,
+                base64DataPreview: base64Data.substring(0, 100) + '...'
+              });
+              return {
+                encryptedData: base64Data,
+                fileName: file.name,
+                originalName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                isEncrypted: false
+              };
+            } catch (error) {
+              console.error(`첨부파일 ${file.name} 처리 실패:`, error);
+              showToast(`첨부파일 ${file.name} 처리에 실패했습니다.`, 'error');
+              return null;
+            }
+          });
+
+        const attachmentResults = await Promise.all(attachmentPromises);
+        const successfulAttachments = attachmentResults.filter(result => result !== null);
+        allFiles.push(...successfulAttachments);
+      }
+
+      // 2단계: 블록체인에 기록
+      setLoadingStep('blockchain');
+
       // 사용자의 활성 지갑 주소들만 추출
       const userWalletAddresses = wallets
         .filter(wallet => wallet.isActive)
@@ -96,33 +377,59 @@ export default function NewChronosPage() {
         isSmartContractTransferable,
         isSmartContractOpenable,
         userId: user?.uid || 'anonymous',
-        walletAddresses: userWalletAddresses
+        walletAddresses: userWalletAddresses,
+        encryptedFiles: allFiles
       };
 
-      // API 호출
-      const response = await fetch('/api/chronos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(chronosData),
+      console.log('📦 타임캡슐 데이터 (암호화 없음):', {
+        name,
+        description,
+        content: content.substring(0, 100) + '...',
+        openDate: chronosData.openDate,
+        isEncrypted,
+        isPublic,
+        tags,
+        enhancedSecurity,
+        n: chronosData.n,
+        m: chronosData.m,
+        userId: chronosData.userId,
+        walletAddresses: chronosData.walletAddresses,
+        totalFiles: allFiles.length,
+        filesInfo: allFiles.map(file => ({
+          fileName: file.fileName,
+          originalName: file.originalName,
+          fileSize: file.fileSize,
+          fileType: file.fileType,
+          isEncrypted: file.isEncrypted,
+          dataLength: file.encryptedData.length
+        }))
       });
-      const result = await response.json();
 
-      if (response.ok) {
-        showToast('타임캡슐이 성공적으로 생성되었습니다!', 'success');
-        setTimeout(() => {
-          // window.location.href 대신 router.push 사용
-          router.push('/my-chronos');
-        }, 1200);
-      } else {
-        showToast(`타임캡슐 생성 실패: ${result.error}`, 'error');
+      // API 호출
+        const response = await fetch('/api/chronos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(chronosData),
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          showToast('타임캡슐이 성공적으로 생성되었습니다!', 'success');
+          setTimeout(() => {
+            router.push('/my-chronos');
+          }, 1200);
+        } else {
+          showToast(`타임캡슐 생성 실패: ${result.error}`, 'error');
+        }
       }
     } catch (error) {
       console.error('타임캡슐 생성 오류:', error);
       showToast('타임캡슐 생성 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false); // 로딩 종료
+      setLoadingStep(null);
     }
   };
 
@@ -140,11 +447,15 @@ export default function NewChronosPage() {
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-10 h-10 text-white animate-spin-reverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
-          <div className="text-lg text-white font-medium">타임캡슐 생성 중...</div>
+          <div className="text-lg text-white font-medium">
+            {loadingStep === 'encrypting' ? '파일 암호화 중...' : 
+             loadingStep === 'blockchain' ? '블록체인에 타임캡슐 기록하는 중...' : 
+             isEncrypted ? '파일 암호화 중...' : '타임캡슐 생성 중...'}
+          </div>
         </div>
       )}
       {/* 토스트 알림 */}
@@ -192,12 +503,13 @@ export default function NewChronosPage() {
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
               <label htmlFor="openDate" className="block text-lg font-medium text-white">
-                열기 날짜
+                열기 날짜 *
               </label>
             </div>
             <input
               id="openDate"
               type="datetime-local"
+              required
               className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 text-white transition-all duration-300"
             />
           </div>
@@ -225,7 +537,7 @@ export default function NewChronosPage() {
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
               <label htmlFor="content" className="block text-lg font-medium text-white">
-                내용
+                내용 *
               </label>
             </div>
             <textarea
@@ -257,7 +569,7 @@ export default function NewChronosPage() {
                   accept="image/*,video/*,.pdf,.doc,.docx,.txt,.mp3,.mp4"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
-                    setAttachments(prev => [...prev, ...files]);
+                    handleFileUpload(files);
                   }}
                   className="hidden"
                 />
@@ -289,7 +601,9 @@ export default function NewChronosPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                        onClick={() => {
+                          setAttachments(prev => prev.filter((_, i) => i !== index));
+                        }}
                         className="text-red-400 hover:text-red-300 transition-colors p-1 hover:bg-red-500/20 rounded-lg"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

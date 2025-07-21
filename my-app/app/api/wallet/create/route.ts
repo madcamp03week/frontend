@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const newWallet = ethers.Wallet.createRandom();
     
     // 5. Private Key를 서버 키로 암호화
-    const encryptedPrivateKey = encryptPrivateKey(newWallet.privateKey);
+    const encryptedPrivateKey = await encryptPrivateKey(newWallet.privateKey);
 
     // 6. 기존 활성 지갑들을 비활성화
     const walletsRef = adminDb.collection('wallets');

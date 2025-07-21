@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     if (walletData.userMade === false) {
       // 시스템에서 생성된 지갑: 서버 키로 복호화하여 제공
       try {
-        const decryptedPrivateKey = decryptPrivateKey(walletData.encryptedPrivateKey);
+        const decryptedPrivateKey = await decryptPrivateKey(walletData.encryptedPrivateKey);
         privateKeyData = {
           userMade: false,
           privateKey: decryptedPrivateKey

@@ -20,8 +20,6 @@ async function getChronosDataByTokenId(tokenId: string) {
   const res = await fetch(tokenUri);
   if (!res.ok) throw new Error('IPFS 메타데이터 fetch 실패');
   const metadata = await res.json();
-  // 4. 필요한 정보 추출
-  console.log('metadata:', metadata);
   return {
     name: metadata.name,
     description: metadata.description,

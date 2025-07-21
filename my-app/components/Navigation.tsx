@@ -40,8 +40,7 @@ export default function Navigation() {
         <span>Chronos</span>
       </Link>
       <div className="space-x-8 text-sm text-gray-300 font-light">
-        <Link href="/company">Company</Link>
-        <Link href="/product">Product</Link>
+        <Link href="/about">About</Link>
         <Link href="/new-chronos">New Chronos</Link>
         <Link href="/my-chronos">My Chronos</Link>
         {isClient && !shouldShowLoading && (

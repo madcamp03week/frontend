@@ -384,7 +384,7 @@ useEffect(() => {
     try {
       if (!fileModalIsEncrypted) {
         // 암호화 안된 파일: 바로 다운로드
-        const url = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        const url = `https://petite-amaranth-bonobo.myfilebase.com/ipfs/${cid}`;
         console.log('url', url);
         const response = await fetch(url);
         if (!response.ok) throw new Error('파일 다운로드 실패');
@@ -399,7 +399,7 @@ useEffect(() => {
           setFileModalError('비밀번호를 입력하세요.');
           return;
         }
-        const url = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        const url = `https://petite-amaranth-bonobo.myfilebase.com/ipfs/${cid}`;
         const response = await fetch(url);
         const arrayBuffer = await response.arrayBuffer();
 
@@ -715,55 +715,54 @@ useEffect(() => {
         </div>
 {showTransferModal && (
   <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="backdrop-blur-xl bg-gray-800/80 rounded-2xl p-8 max-w-lg w-full mx-4 border border-cyan-500/5">
-      {/* 헤더 */}
+    <div className="bg-gray-800/80 border border-purple-500/60 rounded-2xl p-8 max-w-lg w-full mx-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-7 h-7 bg-cyan-500/30 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-7 h-7 bg-purple-400/20 border border-purple-500/60 shadow-[0_0_8px_0_rgba(168,85,247,0.15)] rounded-xl flex items-center justify-center">
+            <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">Chronos 전송</h3>
-            <p className="text-gray-400 text-xs">NFT를 다른 주소 또는 이메일로 전송합니다</p>
+            <p className="text-purple-200/80 text-xs">NFT를 다른 주소 또는 이메일로 전송합니다</p>
           </div>
         </div>
-        <button onClick={() => setShowTransferModal(false)} className="w-8 h-8 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg flex items-center justify-center transition-colors">
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onClick={() => setShowTransferModal(false)} className="w-8 h-8 border border-purple-500/60 rounded-lg flex items-center justify-center transition-colors hover:border-purple-400 hover:text-purple-200">
+          <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      {/* 주소/이메일 선택 */}
+      {/* 라디오 버튼 */}
       <div className="flex justify-center mb-6">
-        <div className="flex bg-gray-800/80 border border-cyan-500/20 rounded-full overflow-hidden">
+        <div className="flex gap-2">
           <button
             type="button"
-            className={`flex items-center px-6 py-2 focus:outline-none font-semibold text-sm transition-all duration-200
-              ${!sendByEmail ? 'bg-cyan-700/20 text-cyan-200' : 'bg-transparent text-gray-400 hover:text-cyan-200'}`}
+            className={`flex items-center px-6 py-2 rounded-full border transition-all duration-200 font-semibold text-sm
+              ${!sendByEmail ? 'border-purple-400 text-purple-200 shadow-[0_0_8px_0_rgba(168,85,247,0.15)]' : 'border-purple-400/30 text-gray-400 hover:border-purple-400 hover:text-purple-200'}`}
             onClick={() => setSendByEmail(false)}
           >
             <span className="mr-2">
               {!sendByEmail ? (
-                <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                <svg className="w-4 h-4 text-purple-200" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
               ) : (
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                <svg className="w-4 h-4 text-purple-400/30" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
               )}
             </span>
             지갑 주소
           </button>
           <button
             type="button"
-            className={`flex items-center px-6 py-2 focus:outline-none font-semibold text-sm transition-all duration-200
-              ${sendByEmail ? 'bg-purple-700/20 text-purple-200' : 'bg-transparent text-gray-400 hover:text-purple-200'}`}
+            className={`flex items-center px-6 py-2 rounded-full border transition-all duration-200 font-semibold text-sm
+              ${sendByEmail ? 'border-purple-400 text-purple-200 shadow-[0_0_8px_0_rgba(168,85,247,0.15)]' : 'border-purple-400/30 text-gray-400 hover:border-purple-400 hover:text-purple-200'}`}
             onClick={() => setSendByEmail(true)}
           >
             <span className="mr-2">
               {sendByEmail ? (
-                <svg className="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                <svg className="w-4 h-4 text-purple-200" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
               ) : (
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
+                <svg className="w-4 h-4 text-purple-400/30" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /></svg>
               )}
             </span>
             이메일
@@ -778,7 +777,7 @@ useEffect(() => {
             placeholder="0x로 시작하는 지갑 주소"
             value={modalToAddress}
             onChange={e => setModalToAddress(e.target.value.trim())}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 hover:border-purple-400 hover:ring-2 hover:ring-purple-400/20 transition-all"
           />
         ) : (
           <div className="relative">
@@ -787,7 +786,7 @@ useEffect(() => {
               placeholder="받는 사람 이메일"
               value={modalEmail}
               onChange={e => setModalEmail(e.target.value.trim())}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all pr-10"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 hover:border-purple-400 hover:ring-2 hover:ring-purple-400/20 transition-all pr-10"
             />
             {modalEmail.length > 0 && (
               modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? (
@@ -825,21 +824,22 @@ useEffect(() => {
         )}
       </div>
       {/* 안내/경고 */}
-      <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg flex items-start space-x-3">
-        <div className="w-5 h-5 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-start space-x-3">
+        <div className="w-5 h-5 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
-          <p className="text-gray-300 text-sm leading-relaxed">정확한 주소/이메일을 입력하세요. 잘못 입력 시 복구가 불가합니다.</p>
+          <p className="text-purple-200 text-sm leading-relaxed">정확한 주소/이메일을 입력하세요. 잘못 입력 시 복구가 불가합니다.</p>
         </div>
       </div>
       {/* 버튼 */}
-      <div className="flex justify-end space-x-3">
+      <div className="flex justify-end space-x-3 mt-6">
         <button
           onClick={() => setShowTransferModal(false)}
-          className="px-5 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50"
+          className="px-5 py-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 hover:from-gray-500/30 hover:to-gray-600/30 border border-gray-500/30 hover:border-gray-400/50 text-gray-300 hover:text-gray-200 rounded-lg transition-all duration-300 disabled:opacity-50"
+          disabled={transferingId === modalTokenId}
         >취소</button>
         <button
           onClick={async () => {
@@ -857,7 +857,7 @@ useEffect(() => {
               ? (!modalEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) || emailExists === false)
               : !modalToAddress.match(/^0x[a-fA-F0-9]{40}$/))
           }
-          className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 flex items-center"
+          className="px-5 py-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-xl transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 disabled:opacity-50 flex items-center"
         >
           {transferingId === modalTokenId ? (
             <>
@@ -867,7 +867,12 @@ useEffect(() => {
               전송중…
             </>
           ) : (
-            '전송하기'
+            <>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              전송하기
+            </>
           )}
         </button>
       </div>
@@ -895,22 +900,21 @@ useEffect(() => {
 {/* 파일 보기 모달 */}
 {showFileModal && (
   <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="backdrop-blur-xl bg-gray-800/80 rounded-2xl p-8 max-w-lg w-full mx-4 border border-purple-500/5">
-      {/* 헤더 */}
+    <div className="bg-gray-800/80 border border-purple-500/60 rounded-2xl p-8 max-w-lg w-full mx-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-7 h-7 bg-purple-500/30 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-7 h-7 bg-purple-400/20 border border-purple-500/60 shadow-[0_0_8px_0_rgba(168,85,247,0.15)] rounded-xl flex items-center justify-center">
+            <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">타임캡슐 파일 보기</h3>
-            <p className="text-gray-400 text-xs">첨부된 파일을 확인하고 다운로드할 수 있습니다</p>
+            <p className="text-purple-200/80 text-xs">첨부된 파일을 확인하고 다운로드할 수 있습니다</p>
           </div>
         </div>
-        <button onClick={() => setShowFileModal(false)} className="w-8 h-8 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg flex items-center justify-center transition-colors">
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onClick={() => setShowFileModal(false)} className="w-8 h-8 border border-purple-500/60 rounded-lg flex items-center justify-center transition-colors hover:border-purple-400 hover:text-purple-200">
+          <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -944,14 +948,19 @@ useEffect(() => {
           {fileModalFiles.length === 0 ? (
             <div className="text-gray-400">첨부된 파일이 없습니다.</div>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-3 text-base">
               {fileModalFiles.map((file: any, idx: number) => (
-                <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-4 py-2">
-                  <span className="text-white text-sm">{file.name || file.cid}</span>
+                <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-10 py-4">
+                  <span className="text-white text-base">{file.name || file.cid}</span>
                   <button
                     onClick={() => {handleDownloadFile(file); console.log('file', file)}}
-                    className="ml-4 px-3 py-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-400/30 hover:to-purple-400/30 text-white rounded-lg text-xs transition-all duration-300"
-                  >다운로드</button>
+                    className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-sm flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    다운로드
+                  </button>
                 </li>
               ))}
             </ul>
@@ -960,7 +969,7 @@ useEffect(() => {
       )}
       <button
         onClick={() => setShowFileModal(false)}
-        className="mt-6 w-full px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-medium rounded-lg transition-all duration-300"
+        className="mt-6 w-32 py-2 text-sm bg-gradient-to-r from-gray-500/20 to-gray-600/20 hover:from-gray-500/30 hover:to-gray-600/30 border border-gray-500/30 hover:border-gray-400/50 text-gray-300 hover:text-gray-200 rounded-lg transition-all duration-300 mx-auto block"
       >닫기</button>
     </div>
   </div>

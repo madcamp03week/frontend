@@ -177,6 +177,7 @@ export async function GET(request: NextRequest) {
       chronosList.map(async (nft) => {
         try {
           const { openDate, isOpened } = await fetchOpenDateByTokenId(nft.tokenId);
+          console.log('🔍 openDate:', openDate);
           return { ...nft, openDate: openDate || nft.openDate, isOpened };
         } catch (e) {
           return nft;

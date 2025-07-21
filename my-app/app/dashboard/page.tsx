@@ -56,6 +56,9 @@ export default function DashboardPage() {
   const [nicknameLoading, setNicknameLoading] = useState(false);
   const [showInactiveWallets, setShowInactiveWallets] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [tokenBalance, setTokenBalance] = useState<number>(0);      // CHRONOS 토큰 잔액
+  const [polBalance, setPolBalance]     = useState<string>('0.00'); // POL 잔액
+  const [loadingBalances, setLoadingBalances] = useState(false);   
   const [transactionStats, setTransactionStats] = useState({
     total: 0,
     success: 0,
@@ -67,6 +70,35 @@ export default function DashboardPage() {
   });
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const router = useRouter();
+
+  const fetchBalances = async () => {
+  const active = wallets.find(w => w.isActive);
+  if (!active) return;
+
+  setLoadingBalances(true);
+  try {
+    const resToken = await fetch('/api/wallet/token-balance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: active.address }),
+    });
+    const dataToken = await resToken.json();
+    if (dataToken.success) {
+      const amount = Number(dataToken.balance);
+      setTokenBalance(amount);
+      // 초기 POL 계산 (10 CHRONOS = 0.1 POL)
+      setPolBalance((amount * 0.01).toFixed(2));
+    }
+  } catch (err) {
+    console.error('잔액 조회 오류:', err);
+  } finally {
+    setLoadingBalances(false);
+  }
+};const handleConvert = () => {
+  // 버튼 클릭 시 POL 재계산
+  setPolBalance((tokenBalance * 0.01).toFixed(2));
+};
+
 
   // 사용자 프로필이 로드되면 닉네임 상태 초기화
   useEffect(() => {
@@ -494,6 +526,60 @@ export default function DashboardPage() {
                   </div>
                 ))}
                 
+                              {wallets.some(w => w.isActive) && (
+                <div className="mt-8 pt-6 border-t border-white/10">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center mr-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
+                      내 토큰
+                    </h3>
+                  </div>
+
+                  {loadingBalances ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-400 animate-pulse">잔액을 불러오는 중...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                      {/* 내 CHRONOS 토큰 */}
+                      <div className="backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10">
+                        <p className="text-sm text-gray-300 mb-2">보유 CHRONOS</p>
+                        <p className="text-3xl font-bold text-white">
+                          {tokenBalance.toLocaleString()} <span className="text-lg text-gray-400">CHR</span>
+                        </p>
+                      </div>
+
+                      {/* 변환된 POL */}
+                      <div className="backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10">
+                        <p className="text-sm text-gray-300 mb-2">예상 POL</p>
+                        <p className="text-3xl font-bold text-cyan-300">
+                          {polBalance} <span className="text-lg text-gray-400">POL</span>
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">10 CHR = 0.1 POL</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 변환 버튼 */}
+                  <div className="mt-6">
+                    <button
+                      onClick={handleConvert}
+                      disabled={loadingBalances}
+                      className="group w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 hover:border-cyan-400/50 text-cyan-300 hover:text-cyan-200 font-semibold rounded-2xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 transform hover:scale-[1.02]"
+                    >
+                      <svg className="w-5 h-5 mr-3 group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      새로고침
+                    </button>
+                  </div>
+                </div>
+              )}
+
                 {/* 비활성 지갑이 있는 경우 표시 */}
                 {wallets.filter(wallet => !wallet.isActive).length > 0 && (
                   <div className="backdrop-blur-sm bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6">

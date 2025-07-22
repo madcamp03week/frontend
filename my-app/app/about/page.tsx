@@ -177,13 +177,17 @@ export default function AboutPage() {
           transition={{ duration: 10, repeat: Infinity }}
         />
         
-        <motion.div variants={floatVariants} animate="animate" className="mb-8">
-          <AnimatedText
-            text="Chronos: 시간을 담는 블록체인"
-            className="text-6xl md:text-7xl font-light mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
-          />
-        </motion.div>
-        
+<motion.div variants={floatVariants} animate="animate" className="mb-8 flex">
+  <AnimatedText
+    text="Chronos:"
+    className="text-6xl md:text-7xl font-light mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+  />
+  <AnimatedText
+    text=" 시간을 담는 블록체인"
+    className="text-6xl md:text-7xl font-medium mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+  />
+</motion.div>
+
         <motion.p
           initial={{ opacity: 0, y: 50, rotateX: 45 }}
           animate={{ opacity: 1, y: 0, rotateX: 0 }}
@@ -202,20 +206,20 @@ export default function AboutPage() {
           transition={{ delay: 2.5, duration: 0.8 }}
           className="mt-8 flex flex-col sm:flex-row gap-4"
         >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full font-normal text-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300"
+  <Link
+            href="/new-chronos"
+            className="mt-8 inline-block px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 shadow-lg
+              bg-gradient-to-r from-cyan-400/60 via-blue-500/60 to-purple-500/60
+              hover:from-cyan-400/80 hover:via-blue-500/80 hover:to-purple-500/80
+              text-white relative overflow-hidden
+              border border-white/40 hover:border-white/60
+              backdrop-blur-sm hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/25"
           >
-            타임캡슐 만들기
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-8 py-4 border border-white/30 rounded-full font-normal text-lg hover:bg-white/10 transition-all duration-300"
-          >
-            데모 체험하기
-          </motion.button>
+            <span className="relative z-10 tracking-wide flex items-center">
+          
+              Chrons 만들러 가기
+            </span>
+          </Link>
         </motion.div>
       </section>
 

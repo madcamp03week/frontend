@@ -5,6 +5,7 @@ import Navigation from "../../components/Navigation";
 import { useAuth } from '../../contexts/AuthContext';
 import WarningModal from "../../components/WarningModal";
 import LikeConfirmModal from "../../components/LikeConfirmModal";
+import LoginRequired from '../../components/LoginRequired';
 
 export default function CommunityPage() {
   const [topChronos, setTopChronos] = useState<any[]>([]);
@@ -173,6 +174,10 @@ export default function CommunityPage() {
       alert('네트워크 오류');
     }
   };
+
+  if (!user) {
+    return <LoginRequired />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-indigo-900 text-white relative overflow-hidden">

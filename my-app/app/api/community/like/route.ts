@@ -72,6 +72,10 @@ export async function POST(req: NextRequest) {
     console.log('receipt', receipt);
     // Firestore에 좋아요 기록 저장
     await likeRef.set({ likedAt: new Date(), txHash: receipt.hash });
+    // likeCount 동기화
+    const likesSnap = await chronosRef.collection('likes').get();
+    const likeCount = likesSnap.size;
+    await chronosRef.update({ likeCount });
     return NextResponse.json({ success: true, txHash: receipt.hash, blockNumber: receipt.blockNumber });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || '스마트 컨트랙트 호출 실패' }, { status: 500 });

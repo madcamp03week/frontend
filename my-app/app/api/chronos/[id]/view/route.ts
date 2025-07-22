@@ -14,8 +14,9 @@ async function getChronosDataByTokenId(tokenId: string) {
   let tokenUri = await contract.tokenURI(tokenId);
   // 2. ipfs:// → https://ipfs.io/ipfs/ 변환 (또는 S3 URL 그대로 사용)
   if (tokenUri.startsWith('ipfs://')) {
-    const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+    const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
     tokenUri = tokenUri.replace('ipfs://', gateway);
+    console.log('🔗 변환된 tokenUri:', tokenUri);
   }
   // 3. fetch로 메타데이터 가져오기
   const res = await fetch(tokenUri);

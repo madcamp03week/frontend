@@ -510,6 +510,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userMade: true, // 사용자가 직접 생성한 지갑
       });
 
+      // 민팅 API 호출 (10 토큰)
+      try {
+        const res = await fetch('/api/wallet/created', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: newWallet.address, userId: user.uid })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          console.error('지갑 생성 알림 실패:', data.error);
+        } else {
+          console.log('지갑 생성 알림 성공:', data.txHash);
+        }
+      } catch (err) {
+        console.error('지갑 생성 알림 예외:', err);
+      }
+
       // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
       const serializedWallet = JSON.stringify(savedWallet);
       const parsedWallet = JSON.parse(serializedWallet);

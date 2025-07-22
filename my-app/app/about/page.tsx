@@ -276,9 +276,9 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="relative bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-3xl p-8 backdrop-blur-sm border border-white/10">
+              <div className="relative bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-3xl p-3 backdrop-blur-sm border border-white/10">
                 <img 
-                  src="@/images/chronos-time-capsule.png" 
+                  src="/asset/chronos.png" 
                   alt="Chronos Digital Time Capsule" 
                   className="w-full h-auto rounded-2xl"
                 />

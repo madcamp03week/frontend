@@ -98,7 +98,7 @@ export default function AboutPage() {
     },
     { 
       title: '스마트 타임락', 
-      desc: '스마트 컨트랙트로 설정된 미래 시점에만 자동으로 열람이 허용되는 완벽한 시간 잠금 시스템입니다.', 
+      desc: '스마트 컨트랙트로 설정된 미래 시점에만 열람이 허용되는 완벽한 시간 잠금 시스템입니다.', 
     },
     { 
       title: 'NFT 소유권', 
@@ -106,7 +106,7 @@ export default function AboutPage() {
     },
     { 
       title: 'DAO 거버넌스', 
-      desc: '탈중앙화된 거버넌스로 모든 주요 의사결정은 커뮤니티 투표를 통해 이루어집니다.', 
+      desc: '탈중앙화된 거버넌스로 우수 타임캡슐이 커뮤니티 투표를 통해 이루어집니다.', 
     },
     { 
       title: '크로스체인 지원', 
@@ -141,7 +141,7 @@ export default function AboutPage() {
     },
     {
       step: '05',
-      title: '자동 열람',
+      title: '열람 가능',
       desc: '설정된 시점에 블록체인 검증을 거쳐 콘텐츠가 안전하게 전달됩니다.',
     }
   ];
@@ -151,7 +151,7 @@ export default function AboutPage() {
     { name: 'Ethereum', desc: '스마트 컨트랙트' },
     { name: 'ERC-721', desc: 'NFT 표준' },
     { name: 'Solidity', desc: '컨트랙트 언어' },
-    { name: 'Web3.js', desc: '블록체인 연동' },
+    { name: 'Ethers.js', desc: '블록체인 연동' },
     { name: 'Next.js', desc: '프론트엔드' },
   ];
 
@@ -479,10 +479,9 @@ export default function AboutPage() {
               DAO 거버넌스
             </h2>
             <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-              서비스 운영은 탈중앙화된 거버넌스 구조로 설계되어, 모든 주요 의사결정은 DAO 투표를 통해 이루어집니다. 
-              이를 통해 플랫폼의 업그레이드, 수수료 정책, 커뮤니티 이벤트 등 사용자 의견이 직접 반영되며 
-              지속 가능한 생태계를 만들어갑니다.
-            </p>
+              서비스 운영은 탈중앙화된 거버넌스 구조로 설계되어, 모든 주요 의사결정은 DAO 투표를 통해 이루어집니다. <br></br>
+              이를 통해 플랫폼의 업그레이드, 수수료 정책, 커뮤니티 이벤트 등 사용자 의견이 직접 반영되며 <br></br>
+              커뮤니티와 함께 지속 가능한 생태계를 만들어갑니다.  </p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -494,7 +493,7 @@ export default function AboutPage() {
             >
               <h3 className="text-2xl font-light mb-4 text-white">커뮤니티 투표</h3>
               <p className="text-gray-300 leading-relaxed">
-                모든 주요 의사결정은 토큰 홀더들의 투표를 통해 결정되며, 
+                홀더들의 투표를 통해 우수 TC이 결정되며, <br></br>
                 투명하고 민주적인 거버넌스를 실현합니다.
               </p>
             </motion.div>
@@ -508,7 +507,7 @@ export default function AboutPage() {
             >
               <h3 className="text-2xl font-light mb-4 text-white">제안 시스템</h3>
               <p className="text-gray-300 leading-relaxed">
-                커뮤니티 구성원 누구나 플랫폼 개선 제안을 할 수 있으며, 
+                구성원 모두 개선 제안을 할 수 있으며, <br></br>
                 검토 과정을 거쳐 투표에 상정됩니다.
               </p>
             </motion.div>
@@ -548,7 +547,7 @@ export default function AboutPage() {
             transition={{ delay: 0.1 }}
             className="text-xl text-gray-300 mb-8 leading-relaxed"
           >
-            Chronos는 단순한 데이터 저장 공간을 넘어, 과거와 미래를 연결하는 감동적인 경험을 제공함으로써 
+            Chronos는 단순한 데이터 저장 공간을 넘어, 과거와 미래를 연결하는 감동적인 경험을 제공함으로써,<br></br>
             개인의 이야기를 시간의 흐름 속에 영원히 기록합니다.
           </motion.p>
           <motion.div

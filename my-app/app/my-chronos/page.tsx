@@ -385,7 +385,7 @@ useEffect(() => {
     try {
       if (!fileModalIsEncrypted) {
         // 암호화 안된 파일: 바로 다운로드
-        const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+        const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
         const url = `${gateway}${cid}`;
         console.log('url', url);
         const response = await fetch(url);
@@ -401,7 +401,7 @@ useEffect(() => {
           setFileModalError('비밀번호를 입력하세요.');
           return;
         }
-        const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+        const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
         const url = `${gateway}${cid}`;
         const response = await fetch(url);
         const arrayBuffer = await response.arrayBuffer();

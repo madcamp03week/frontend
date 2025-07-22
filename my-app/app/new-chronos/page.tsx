@@ -675,31 +675,32 @@ export default function NewChronosPage() {
             </div>
             <div className="space-y-3">
               {/* 파일 첨부 버튼 */}
-              <div className="flex items-center space-x-3">
-                <input
-                  type="file"
-                  id="file-upload"
-                  multiple
-                  accept="image/*,video/*,.pdf,.doc,.docx,.txt,.mp3,.mp4"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    handleFileUpload(files);
-                  }}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-xl transition-all duration-300 cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span>파일 추가</span>
-                </label>
-                <span className="text-sm text-gray-300">
-                  사진, 비디오, 문서 등 어떤 형식이든 저장할 수 있습니다 (파일당 최대 5MB)
-                </span>
-              </div>
+       <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 gap-3">
+  <input
+    type="file"
+    id="file-upload"
+    multiple
+    accept="image/*,video/*,.pdf,.doc,.docx,.txt,.mp3,.mp4"
+    onChange={(e) => {
+      const files = Array.from(e.target.files || []);
+      handleFileUpload(files);
+    }}
+    className="hidden"
+  />
+  <label
+    htmlFor="file-upload"
+    className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-xl transition-all duration-300 cursor-pointer"
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    </svg>
+    <span>파일 추가</span>
+  </label>
+  <span className="text-sm text-gray-300 text-center sm:text-left">
+    사진, 비디오, 문서 등 어떤 형식이든 저장할 수 있습니다 (파일당 최대 5MB)
+  </span>
+</div>
+
 
               {/* 첨부된 파일 목록 */}
               {attachments.length > 0 && (

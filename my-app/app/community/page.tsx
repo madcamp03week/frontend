@@ -238,8 +238,9 @@ export default function CommunityPage() {
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent animate-pulse">
-          Community
+          Chronos DAO
         </h1>
+        <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full mb-8"></div>
 
         {/* 내 지갑 주소 + Up 횟수 카드 */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-12 w-full">

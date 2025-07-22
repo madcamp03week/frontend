@@ -19,7 +19,7 @@ const SubscribeFooter: FC = () => {
       <div className="relative bg-black pt-16 pb-8 px-6 md:px-12">
         {/* 구독 섹션 */}
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0">
-          <h3 className="text-2xl md:text-3xl font-light">Subscribe Newsletters</h3>
+          <h3 className="text-2xl md:text-3xl font-light">Question Form</h3>
 
           {/* Formspree 폼: method POST, action 설정 */}
           <form
@@ -29,7 +29,7 @@ const SubscribeFooter: FC = () => {
             className="flex w-full max-w-md"
           >
             {/* 알림 제목 */}
-            <input type="hidden" name="_subject" value="🚀 New subscriber!" />
+            <input type="hidden" name="_subject" value="Thanks for Questions!" />
             {/* 자동 캡차 비활성화 */}
             <input type="hidden" name="_captcha" value="false" />
 
@@ -46,7 +46,7 @@ const SubscribeFooter: FC = () => {
               disabled={state.submitting || state.succeeded}
               className="bg-gradient-to-r from-purple-600 to-green-400 px-6 py-3 rounded-r-lg font-medium hover:opacity-90 transition disabled:opacity-50"
             >
-              {state.succeeded ? 'Thanks!' : 'Subscribe Now'}
+              {state.succeeded ? 'Thanks!' : 'Question Now'}
             </button>
           </form>
 

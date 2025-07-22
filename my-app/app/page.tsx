@@ -219,18 +219,22 @@ export default function Home() {
     />
   ))}
 </section>
+<br></br><br></br>
+<br></br>
+<br></br>
+
 
 <section className="mt-20 px-6 md:px-10 flex flex-col md:flex-row items-center justify-between">
   {/* 좌측: 커뮤니티 텍스트 */}
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
+    initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 1 }}
     className="text-center md:text-left"
   >
     <p className="text-sm text-gray-300">Join a community</p>
     <h2 className="text-4xl md:text-5xl font-extrabold mt-2 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-400 to-purple-500">
-      of millions
+     DAO
     </h2>
   </motion.div>
 
@@ -244,27 +248,31 @@ export default function Home() {
     {/* Active Accounts */}
     <div className="text-center md:text-right">
       <p className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-purple-500">
-        11.5M+
+      10 per account
       </p>
-      <p className="uppercase text-xs text-gray-400 mt-1">Active Accounts</p>
+      <p className="uppercase text-xs text-gray-400 mt-1">PER TOKEN</p>
     </div>
     {/* NFTs Minted */}
     <div className="text-center md:text-right">
       <p className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-        21.9M
+        ∞
       </p>
-      <p className="uppercase text-xs text-gray-400 mt-1">NFTs Minted</p>
+      <p className="uppercase text-xs text-gray-400 mt-1">Token Minted</p>
     </div>
     {/* Avg Cost */}
     <div className="text-center md:text-right">
       <p className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-300 to-green-600">
-        $0.00025
+        0.1 POL per 10 tokens
       </p>
-      <p className="uppercase text-xs text-gray-400 mt-1">Average Cost per Transaction</p>
+      <p className="uppercase text-xs text-gray-400 mt-1">Exchange ratio</p>
       <br></br>
     </div>
   </motion.div>
 </section>
+<br></br>
+<br></br>
+<br></br>
+<br></br>
 
       <MadeForSection />
       {/* 구독 섹션 */}

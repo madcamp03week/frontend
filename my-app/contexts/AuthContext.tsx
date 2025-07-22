@@ -181,9 +181,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userMade: false, // 시스템에서 자동 생성
       });
       
+      // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
+      const serializedWallet = JSON.stringify(savedWallet);
+      const parsedWallet = JSON.parse(serializedWallet);
+
       // serverTimestamp를 Date로 변환
       const walletWithDates = {
-        ...savedWallet,
+        ...parsedWallet,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -229,16 +233,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             getUserProfile(user.uid),
             getAllUserWallets(user.uid)
           ]);
+          
+          // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
+          const serializedProfile = profile ? JSON.stringify(profile) : null;
+          const serializedWallets = JSON.stringify(userWallets);
+          
           console.log('Firestore에서 로드된 데이터:', { 
             profile: profile ? '있음' : '없음', 
             walletsCount: userWallets.length,
             wallets: userWallets.map((w: WalletData) => ({ id: w.id, address: w.address, isActive: w.isActive }))
           });
+          
           if (profile) {
+            const parsedProfile = JSON.parse(serializedProfile!);
             const profileWithDates = {
-              ...profile,
-              createdAt: new Date(profile.createdAt),
-              updatedAt: new Date(profile.updatedAt),
+              ...parsedProfile,
+              createdAt: new Date(parsedProfile.createdAt),
+              updatedAt: new Date(parsedProfile.updatedAt),
             };
             setUserProfile(profileWithDates);
             setStoredUserProfile(profileWithDates);
@@ -270,7 +281,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
           
-          const walletsWithDates = userWallets.map(wallet => ({
+          const parsedWallets = JSON.parse(serializedWallets);
+          const walletsWithDates = parsedWallets.map((wallet: any) => ({
             ...wallet,
             createdAt: new Date(wallet.createdAt),
             updatedAt: new Date(wallet.updatedAt),
@@ -296,8 +308,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 displayName: user.displayName || undefined,
                 photoURL: user.photoURL || undefined,
               });
+              
+              // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
+              const serializedProfile = JSON.stringify(newProfile);
+              const parsedProfile = JSON.parse(serializedProfile);
+              
               const profileWithDates = {
-                ...newProfile,
+                ...parsedProfile,
                 createdAt: new Date(),
                 updatedAt: new Date(),
               };
@@ -344,9 +361,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         photoURL: user.photoURL || undefined,
       });
       
+      // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
+      const serializedProfile = JSON.stringify(newProfile);
+      const parsedProfile = JSON.parse(serializedProfile);
+      
       // serverTimestamp를 Date로 변환
       const profileWithDates = {
-        ...newProfile,
+        ...parsedProfile,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -402,12 +423,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('백엔드 응답 데이터:', result.data);
       
+      // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
+      const serializedWallet = JSON.stringify(result.data);
+      const parsedWallet = JSON.parse(serializedWallet);
+      
       // 백엔드 응답 데이터를 Date 객체로 변환
       const walletWithDates = {
-        ...result.data,
-        id: result.data.id || result.data.address, // id가 없으면 address를 fallback으로 사용
-        createdAt: result.data.createdAt ? new Date(result.data.createdAt) : new Date(),
-        updatedAt: result.data.updatedAt ? new Date(result.data.updatedAt) : new Date()
+        ...parsedWallet,
+        id: parsedWallet.id || parsedWallet.address, // id가 없으면 address를 fallback으로 사용
+        createdAt: parsedWallet.createdAt ? new Date(parsedWallet.createdAt) : new Date(),
+        updatedAt: parsedWallet.updatedAt ? new Date(parsedWallet.updatedAt) : new Date()
       };
       
       console.log('변환된 지갑 데이터:', walletWithDates);
@@ -465,9 +490,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userMade: true, // 사용자가 직접 생성한 지갑
       });
 
+      // JSON.stringify와 JSON.parse를 사용하여 직렬화 문제 해결
+      const serializedWallet = JSON.stringify(savedWallet);
+      const parsedWallet = JSON.parse(serializedWallet);
+
       // serverTimestamp를 Date로 변환
       const walletWithDates = {
-        ...savedWallet,
+        ...parsedWallet,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

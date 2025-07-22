@@ -73,32 +73,46 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const fetchBalances = async () => {
-  const active = wallets.find(w => w.isActive);
-  if (!active) return;
+    const active = wallets.find(w => w.isActive);
+    if (!active) return;
 
-  setLoadingBalances(true);
-  try {
-    const resToken = await fetch('/api/wallet/token-balance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: active.address }),
-    });
-    const dataToken = await resToken.json();
-    if (dataToken.success) {
-      const amount = Number(dataToken.balance);
-      setTokenBalance(amount);
-      // 초기 POL 계산 (10 CHRONOS = 0.1 POL)
-      setPolBalance((amount * 0.01).toFixed(2));
+    setLoadingBalances(true);
+    try {
+      // CHRONOS 토큰 잔액 조회
+      const resToken = await fetch('/api/dao/balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: active.address }),
+      });
+      const dataToken = await resToken.json();
+      if (dataToken.success) {
+        const amount = Number(dataToken.balance);
+        setTokenBalance(amount);
+        // estimatedPolBalance 계산 (tokenBalance / 10)
+        setEstimatedPolBalance((amount / 10).toFixed(2));
+      }
+
+      // POL 잔액 조회
+      const resPol = await fetch('/api/wallet/balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: active.address }),
+      });
+      const dataPol = await resPol.json();
+      if (dataPol.success) {
+        setPolBalance(dataPol.balance);
+      }
+    } catch (err) {
+      console.error('잔액 조회 오류:', err);
+    } finally {
+      setLoadingBalances(false);
     }
-  } catch (err) {
-    console.error('잔액 조회 오류:', err);
-  } finally {
-    setLoadingBalances(false);
-  }
-};const handleConvert = () => {
-  // 버튼 클릭 시 POL 재계산
-  setPolBalance((tokenBalance * 0.01).toFixed(2));
-};
+  };
+
+  const handleConvert = () => {
+    // 새로고침 버튼 클릭 시 잔액 다시 조회
+    fetchBalances();
+  };
 
 
   // 사용자 프로필이 로드되면 닉네임 상태 초기화
@@ -263,6 +277,13 @@ export default function DashboardPage() {
       fetchTransactions();
     }
   }, [user, hasWallet]);
+
+  // 컴포넌트 마운트 시 잔액 데이터 가져오기
+  useEffect(() => {
+    if (user && hasWallet && wallets.length > 0) {
+      fetchBalances();
+    }
+  }, [user, hasWallet, wallets]);
 
   // 트랜잭션 상태 디버깅
   useEffect(() => {

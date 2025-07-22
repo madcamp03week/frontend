@@ -48,6 +48,8 @@ export default function DashboardPage() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showPrivateKeyWarningModal, setShowPrivateKeyWarningModal] = useState(false);
   const [showPrivateKeyDisplayModal, setShowPrivateKeyDisplayModal] = useState(false);
+  const [showPolygonConversionModal, setShowPolygonConversionModal] = useState(false);
+  const [polygonConversionLoading, setPolygonConversionLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<any>(null);
   const [privateKeyData, setPrivateKeyData] = useState<any>(null);
   const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
@@ -89,7 +91,7 @@ export default function DashboardPage() {
         const amount = Number(dataToken.balance);
         setTokenBalance(amount);
         // estimatedPolBalance 계산 (tokenBalance / 10)
-        setEstimatedPolBalance((amount / 10).toFixed(2));
+        setEstimatedPolBalance((amount / 1000).toFixed(2));
       }
 
       // POL 잔액 조회
@@ -100,7 +102,7 @@ export default function DashboardPage() {
       });
       const dataPol = await resPol.json();
       if (dataPol.success) {
-        setPolBalance(dataPol.balance);
+        setPolBalance(Number(dataPol.balance).toFixed(2));
       }
     } catch (err) {
       console.error('잔액 조회 오류:', err);
@@ -112,6 +114,47 @@ export default function DashboardPage() {
   const handleConvert = () => {
     // 새로고침 버튼 클릭 시 잔액 다시 조회
     fetchBalances();
+  };
+
+  const handlePolygonConversion = async () => {
+    const active = wallets.find(w => w.isActive);
+    if (!active || !user) return;
+
+    setPolygonConversionLoading(true);
+    try {
+      // Firebase ID 토큰 가져오기
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch('/api/dao/exchange', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          address: active.address,
+          amount: 10, // 10 CHRONOS 토큰 전환
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('Polygon 전환 성공:', data);
+        alert('Polygon 전환이 성공적으로 완료되었습니다!');
+        // 잔액 새로고침
+        fetchBalances();
+      } else {
+        console.error('Polygon 전환 실패:', data.error);
+        alert(data.error || 'Polygon 전환에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Polygon 전환 오류:', error);
+      alert('Polygon 전환 중 오류가 발생했습니다.');
+    } finally {
+      setPolygonConversionLoading(false);
+      setShowPolygonConversionModal(false);
+    }
   };
 
 
@@ -318,15 +361,15 @@ export default function DashboardPage() {
 
         {/* 사용자 정보 카드 */}
         <div className="mb-8 group">
-          <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl p-8 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-500 hover:border-cyan-500/50 transform hover:scale-[1.02]">
+          <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl p-8 shadow-2xl hover:shadow-violet-500/25 transition-all duration-500 hover:border-violet-500/50 transform hover:scale-[1.02]">
             <div className="flex items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center mr-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center mr-6">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
                   내 정보
                 </h3>
               </div>
@@ -335,7 +378,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
                   <span className="text-gray-300 text-sm">이메일</span>
                 </div>
                 <p className="text-lg font-medium pl-5">{user.email || '이메일 정보 없음'}</p>
@@ -343,7 +386,7 @@ export default function DashboardPage() {
               
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
                   <span className="text-gray-300 text-sm">사용자 ID</span>
                 </div>
                 <p className="text-sm font-mono pl-5 text-gray-300 break-all">{user.uid}</p>
@@ -351,7 +394,7 @@ export default function DashboardPage() {
               
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
                   <span className="text-gray-300 text-sm">가입일</span>
                 </div>
                 <p className="text-lg font-medium pl-5">
@@ -362,7 +405,7 @@ export default function DashboardPage() {
               {userProfile && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
                     <span className="text-gray-300 text-sm">프로필 생성일</span>
                   </div>
                   <p className="text-lg font-medium pl-5">
@@ -375,10 +418,10 @@ export default function DashboardPage() {
             {/* 닉네임 설정 섹션 */}
             <div className="mt-8 pt-6 border-t border-white/10">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="text-gray-300 text-sm font-medium">닉네임</span>
-                </div>
+                              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-300 text-sm font-medium">닉네임</span>
+              </div>
                 {!isEditingNickname && (
                   <button
                     onClick={() => setIsEditingNickname(true)}
@@ -454,15 +497,27 @@ export default function DashboardPage() {
         {/* 잔고 카드 (분리된 부분) */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-8">
           <div className="p-8">
-            <div className="flex items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center mr-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center mr-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
+                  잔고
+                </h3>
               </div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
-                잔고
-              </h3>
+              <button
+                onClick={handleConvert}
+                disabled={loadingBalances}
+                className="group p-2 bg-gradient-to-r from-violet-500/20 to-purple-600/20 hover:from-violet-500/30 hover:to-purple-600/30 border border-violet-500/30 hover:border-violet-400/50 text-violet-300 hover:text-violet-200 rounded-xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-violet-500/25 transform hover:scale-105"
+                title="새로고침"
+              >
+                <svg className="w-5 h-5 group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
             {loadingBalances ? (
               <div className="text-center py-4">
@@ -485,7 +540,7 @@ export default function DashboardPage() {
                     {/* 예상 POL */}
                     <div className="flex flex-col items-center min-w-[90px]">
                       <p className="text-sm text-gray-300 mb-1">예상 POL</p>
-                      <p className="text-3xl font-bold text-cyan-300">
+                      <p className="text-3xl font-bold text-violet-300">
                         {estimatedPolBalance} <span className="text-lg text-gray-400">POL</span>
                       </p>
                     </div>
@@ -504,17 +559,19 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-            {/* 변환 버튼 */}
+            {/* Polygon으로 전환 버튼 */}
             <div className="mt-6">
               <button
-                onClick={handleConvert}
+                onClick={() => {
+                  setShowPolygonConversionModal(true);
+                }}
                 disabled={loadingBalances}
-                className="group w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 hover:border-cyan-400/50 text-cyan-300 hover:text-cyan-200 font-semibold rounded-2xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 transform hover:scale-[1.02]"
+                className="group w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-violet-500/20 to-purple-600/20 hover:from-violet-500/30 hover:to-purple-600/30 border border-violet-500/30 hover:border-violet-400/50 text-violet-300 hover:text-violet-200 font-semibold rounded-2xl disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-violet-500/25 transform hover:scale-[1.02]"
               >
-                <svg className="w-5 h-5 mr-3 group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg className="w-5 h-5 mr-3 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                새로고침
+                Polygon으로 전환
               </button>
             </div>
           </div>
@@ -524,13 +581,13 @@ export default function DashboardPage() {
         <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl overflow-hidden shadow-2xl mb-8">
           <div className="p-8">
             <div className="flex items-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-center mr-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center mr-6">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
                   내 지갑
                 </h2>
               </div>
@@ -822,13 +879,13 @@ export default function DashboardPage() {
           <div className="p-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-orange-500/20 to-red-600/20 border border-orange-500/30 flex items-center justify-center mr-6">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center mr-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-orange-200 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-violet-200 bg-clip-text text-transparent">
                     내 트랜잭션들
                   </h2>
                   <p className="text-gray-400"> 내 지갑의 Chronos 트랙잭션들</p>
@@ -1084,6 +1141,25 @@ export default function DashboardPage() {
           walletAddress={selectedWallet?.address || ''}
         />
       )}
+
+      {/* Polygon 전환 모달 */}
+      <WarningModal
+        isOpen={showPolygonConversionModal}
+        onClose={() => setShowPolygonConversionModal(false)}
+        onConfirm={handlePolygonConversion}
+        title="Polygon으로 전환"
+        message="10개의 토큰을 폴리곤으로 전환합니다."
+        confirmText="전환"
+        cancelText="취소"
+        details={
+          <p className="text-gray-400 text-xs">
+            • 10 CHRONOS 토큰이 0.01 POL로 전환됩니다<br/>
+            • 전환은 되돌릴 수 없습니다<br/>
+            • 전환 완료까지 몇 분이 소요될 수 있습니다
+          </p>
+        }
+        loading={polygonConversionLoading}
+      />
     </div>
   );
 }

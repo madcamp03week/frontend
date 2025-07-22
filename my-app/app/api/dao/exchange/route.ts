@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-import { CONTRACT_ABI } from '@/lib/contract-abi';
+import { CHRONOS_DAO_ABI } from '@/lib/contract-abi';
 
 const CHRONOS_DAO_CONTRACT_ADDR = process.env.CHRONOS_DAO_CONTRACT_ADDR;
 const INFURA_URL = process.env.INFURA_URL;
@@ -9,6 +9,7 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 export async function POST(req: NextRequest) {
   try {
     const { address } = await req.json();
+    console.log('address:', address);
     if (!address || !ethers.isAddress(address)) {
       return NextResponse.json({ success: false, error: '유효하지 않은 address입니다.' }, { status: 400 });
     }
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
     const provider = new ethers.JsonRpcProvider(INFURA_URL);
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-    const contract = new ethers.Contract(CHRONOS_DAO_CONTRACT_ADDR, CONTRACT_ABI, wallet);
+    const contract = new ethers.Contract(CHRONOS_DAO_CONTRACT_ADDR, CHRONOS_DAO_ABI, wallet);
     const tx = await contract.exchangeTokensForPolygon(address);
     const receipt = await tx.wait();
     return NextResponse.json({ success: true, txHash: receipt.hash, blockNumber: receipt.blockNumber });

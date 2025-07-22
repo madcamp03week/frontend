@@ -185,15 +185,15 @@ export async function checkNFTOwnership(tokenId: string, walletAddress: string) 
 /**
  * CHRONOS 토큰 민팅 함수
  * @param address 민팅 받을 지갑 주소
- * @param amount 민팅할 토큰 수량
+ * @param amount 민팅할 토큰 수량 (wei 단위)
  * @returns { success: boolean, txHash?: string, blockNumber?: number, error?: string }
  */
-export async function mintChronosToken(address: string, amount: number) {
+export async function mintChronosToken(address: string, amount: bigint) {
   try {
     if (!address || !ethers.isAddress(address)) {
       return { success: false, error: '유효하지 않은 주소입니다.' };
     }
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+    if (!amount || amount <= BigInt(0)) {
       return { success: false, error: '유효하지 않은 수량입니다.' };
     }
     if (!CHRONOS_TOKEN_CONTRACT_ADDR) {

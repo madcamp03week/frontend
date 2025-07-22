@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
     await batch.commit();
 
     // 8-1. 지갑 생성 후 10 토큰 자동 민팅
-    mintChronosToken(newWallet.address, 10)
+    const mintAmount = ethers.parseUnits('10', 18); // 10 토큰을 18자리 소수점으로 변환
+    mintChronosToken(newWallet.address, mintAmount)
       .then((result) => {
         if (!result.success) {
           console.error('토큰 민팅 실패:', result.error);

@@ -16,6 +16,7 @@ async function getChronosDataByTokenId(tokenId: string) {
   if (tokenUri.startsWith('ipfs://')) {
     const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
     tokenUri = tokenUri.replace('ipfs://', gateway);
+    console.log('🔗 변환된 tokenUri:', tokenUri);
   }
   // 3. fetch로 메타데이터 가져오기
   const res = await fetch(tokenUri);

@@ -176,17 +176,22 @@ export default function AboutPage() {
           animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
           transition={{ duration: 10, repeat: Infinity }}
         />
-        
-<motion.div variants={floatVariants} animate="animate" className="mb-8 flex">
+
+<motion.div
+  variants={floatVariants}
+  animate="animate"
+  className="mb-8 flex flex-wrap justify-center items-center text-center gap-x-2"
+>
   <AnimatedText
     text="Chronos:"
-    className="text-6xl md:text-7xl font-light mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+    className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
   />
   <AnimatedText
-    text=" 시간을 담는 블록체인"
-    className="text-6xl md:text-7xl font-medium mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+    text="시간을 담는 블록체인"
+    className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-semibold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
   />
 </motion.div>
+
 
         <motion.p
           initial={{ opacity: 0, y: 50, rotateX: 45 }}

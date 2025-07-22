@@ -10,7 +10,7 @@ export async function fetchOpenDateByTokenId(tokenId: string): Promise<{ openDat
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
   let tokenUri = await contract.tokenURI(tokenId);
   if (tokenUri.startsWith('ipfs://')) {
-    const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+    const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
     tokenUri = tokenUri.replace('ipfs://', gateway);
   }
   const res = await fetch(tokenUri);

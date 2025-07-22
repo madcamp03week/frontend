@@ -562,7 +562,9 @@ export default function AboutPage() {
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full font-normal text-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300"
             >
-              첫 타임캡슐 만들기
+              <Link href="/new-chronos" className="flex items-center justify-center h-full">
+                첫 타임캡슐 만들기
+              </Link>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}

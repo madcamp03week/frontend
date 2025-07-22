@@ -130,7 +130,7 @@ export default function Home() {
       <section className="relative z-10 flex flex-col items-center justify-center mt-28 px-4 text-center">
         <p className="text-lg italic text-gray-300 mb-2">당신의 기억을 영원히</p>
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
-          FINANCIAL EXPLORATION
+          Blockchain of Memories
         </h1>
         <Link
           href="/new-chronos"

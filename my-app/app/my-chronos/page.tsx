@@ -58,7 +58,7 @@ export default function MyChronosPage() {
   const [fileModalPassword, setFileModalPassword] = useState<string>('');
   const [fileModalPasswordStep, setFileModalPasswordStep] = useState<'input'|'list'>('input');
   const [fileModalError, setFileModalError] = useState<string|null>(null);
-
+  const [showOpenResultModal, setShowOpenResultModal] = useState(false);
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
   );
@@ -272,7 +272,8 @@ useEffect(() => {
       const response = await openTimeCapsule(tokenId, firebaseToken || '');
       
       if (response.success) {
-        setOpenResult(response);
+       setOpenResult({ ...response, videoUrl: '/open.mp4' });
+        setShowOpenResultModal(true);
         // 성공 시 목록 새로고침
         setTimeout(() => {
           fetchChronosList();
@@ -965,6 +966,35 @@ useEffect(() => {
         onClick={() => setShowFileModal(false)}
         className="mt-6 w-32 py-2 text-sm bg-gradient-to-r from-gray-500/20 to-gray-600/20 hover:from-gray-500/30 hover:to-gray-600/30 border border-gray-500/30 hover:border-gray-400/50 text-gray-300 hover:text-gray-200 rounded-lg transition-all duration-300 mx-auto block"
       >닫기</button>
+    </div>
+  </div>
+)}
+
+
+{/* 파일 보기 모달 끝난 뒤에 추가 */}
+{showOpenResultModal && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md mx-4">
+      
+
+  {/* mp4 자동 재생 */}
+      <video
+        src="/asset/open.mp4"       // public/assets/open.mp4 라면 이 경로가 맞습니다
+        autoPlay                     // 자동 재생
+        muted                        // 음소거 (필수)
+        playsInline                  // iOS 등에서 인라인 재생
+        className="w-full rounded-lg mb-4"
+      >
+        브라우저가 video 태그를 지원하지 않습니다.
+      </video>
+
+
+      <button
+        onClick={() => setShowOpenResultModal(false)}
+        className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 text-purple-200 rounded-lg w-full"
+      >
+        확인
+      </button>
     </div>
   </div>
 )}

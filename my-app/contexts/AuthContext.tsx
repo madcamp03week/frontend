@@ -16,6 +16,7 @@ import {
   type UserProfile,
   type WalletData 
 } from '../lib/firestore';
+import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
 
 // localStorage 키 상수
 const STORAGE_KEYS = {
@@ -121,6 +122,24 @@ const clearStoredData = () => {
   localStorage.removeItem(STORAGE_KEYS.WALLETS);
   localStorage.removeItem(STORAGE_KEYS.AUTH_STATE);
 };
+
+function generateRandomNicknameWithTime() {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const MM = pad(now.getMonth() + 1);
+  const dd = pad(now.getDate());
+  const HH = pad(now.getHours());
+  const mm = pad(now.getMinutes());
+  const ss = pad(now.getSeconds());
+  const timeStr = `${yyyy}${MM}${dd}`;
+  const nickname = uniqueNamesGenerator({
+    dictionaries: [adjectives, animals],
+    separator: '_',
+    style: 'capital',
+  });
+  return `${nickname}_${timeStr}`;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -352,12 +371,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Firebase 회원가입
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+      // 랜덤 닉네임 생성 (닉네임이 없을 때만)
+      const randomNickname = generateRandomNicknameWithTime();
       // Firestore에 사용자 프로필 저장
       const newProfile = await saveUserProfile({
         uid: user.uid,
         email: user.email || '',
-        displayName: user.displayName || undefined,
+        displayName: user.displayName || randomNickname, // 닉네임이 없으면 랜덤 닉네임+시간 사용
         photoURL: user.photoURL || undefined,
       });
       

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Navigation from "../../components/Navigation";
 import { useAuth } from '../../contexts/AuthContext';
+import WarningModal from "../../components/WarningModal";
+import LikeConfirmModal from "../../components/LikeConfirmModal";
 
 export default function CommunityPage() {
   const [topChronos, setTopChronos] = useState<any[]>([]);
@@ -110,7 +112,29 @@ export default function CommunityPage() {
     fetchData();
   }, [user]);
 
-  // 좋아요 버튼 클릭 핸들러
+  // 좋아요 모달 상태
+  const [likeModalOpen, setLikeModalOpen] = useState(false);
+  const [likeTargetId, setLikeTargetId] = useState<string | null>(null);
+  const [likeTargetType, setLikeTargetType] = useState<'top' | 'latest' | null>(null);
+  const [likeLoading, setLikeLoading] = useState(false);
+
+  // 좋아요 버튼 클릭 시 모달 오픈
+  const openLikeModal = (chronosId: string, type: 'top' | 'latest') => {
+    setLikeTargetId(chronosId);
+    setLikeTargetType(type);
+    setLikeModalOpen(true);
+  };
+
+  // 모달에서 확인 시 실제 좋아요 처리
+  const handleLikeConfirm = async () => {
+    if (!likeTargetId || !likeTargetType) return;
+    setLikeLoading(true);
+    await handleLike(likeTargetId, likeTargetType);
+    setLikeLoading(false);
+    setLikeModalOpen(false);
+  };
+
+  // 좋아요 버튼 클릭 핸들러 (기존 handleLike는 내부에서만 사용)
   const handleLike = async (chronosId: string, type: 'top' | 'latest') => {
     if (!user) {
       alert('로그인이 필요합니다.');
@@ -124,11 +148,10 @@ export default function CommunityPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`,
         },
-        body: JSON.stringify({ chronosId }),
+        body: JSON.stringify({ chronosId, likerAddress: wallets?.find(w => w.isActive)?.address }),
       });
       const data = await res.json();
       if (res.ok) {
-        // 두 리스트 모두에서 동기화
         setTopChronos(list =>
           list.map(item =>
             item.id === chronosId
@@ -195,6 +218,18 @@ export default function CommunityPage() {
           </div>
         </div>
       )}
+
+      {/* 좋아요 확인 모달 */}
+      <LikeConfirmModal
+        isOpen={likeModalOpen}
+        onClose={() => { if (!likeLoading) setLikeModalOpen(false); }}
+        onConfirm={handleLikeConfirm}
+        loading={likeLoading}
+        title="Up 확인"
+        message="Chronos 주인에게 1CR이 전송됩니다."
+        confirmText={"확인"}
+        cancelText="취소"
+      />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent animate-pulse">
@@ -291,7 +326,7 @@ export default function CommunityPage() {
                           <button
                             className="flex items-center gap-1 mt-3 px-2 py-1 rounded-full border-none focus:outline-none transition"
                             disabled={isMine || alreadyLiked}
-                            onClick={() => handleLike(chronos.id, 'top')}
+                            onClick={() => openLikeModal(chronos.id, 'top')}
                             aria-label="좋아요"
                           >
                             <svg
@@ -363,7 +398,7 @@ export default function CommunityPage() {
                           <button
                             className="flex items-center gap-1 mt-3 px-2 py-1 rounded-full border-none focus:outline-none transition"
                             disabled={isMine || alreadyLiked}
-                            onClick={() => handleLike(chronos.id, 'latest')}
+                            onClick={() => openLikeModal(chronos.id, 'latest')}
                             aria-label="좋아요"
                           >
                             <svg

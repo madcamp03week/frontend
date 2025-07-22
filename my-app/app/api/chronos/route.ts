@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
         isSmartContractTransferable: isSmartContractTransferable !== undefined ? isSmartContractTransferable : true,
         isSmartContractOpenable: isSmartContractOpenable !== undefined ? isSmartContractOpenable : true,
         isEncrypted, // 추가
-        encryptedFiles // 추가
+        encryptedFiles, // 추가
+        writerAddress: userWalletAddresses[0] // 첫 번째 주소를 작성자로 전달
       } as any);
       
       if (!blockchainResult.success) {

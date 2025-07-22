@@ -165,8 +165,8 @@ export async function POST(
       // DB 업데이트 실패는 전체 트랜잭션을 실패시키지 않음
     }
 
-    // 성공 응답
-    return NextResponse.json({
+    // 성공 응답 - Set 객체나 복잡한 객체를 순수한 객체로 변환
+    const responseData = {
       success: true,
       message: '타임캡슐이 성공적으로 열렸습니다.',
       data: {
@@ -175,7 +175,9 @@ export async function POST(
         blockNumber: openResult.blockNumber,
         contractAddress: openResult.contractAddress
       }
-    });
+    };
+    
+    return NextResponse.json(JSON.parse(JSON.stringify(responseData)));
 
   } catch (error) {
     console.error('💥 타임캡슐 열기 API 오류:', error);

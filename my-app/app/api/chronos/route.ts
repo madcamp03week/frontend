@@ -132,14 +132,17 @@ export async function POST(request: NextRequest) {
       console.log(`✅ 수신자 ${recipientAddress}용 chronos 문서 생성 완료:`, docRef.id);
     }
 
-    return NextResponse.json({
+    // Set 객체나 복잡한 객체를 순수한 객체로 변환
+    const responseData = {
       success: true,
       chronosIds: chronosResults.map(c => c.id),
       tokenId: blockchainResult.tokenId,
       message: `${userWalletAddresses.length}명에게 타임캡슐이 성공적으로 생성되었습니다.`,
       data: chronosResults,
       blockchain: blockchainResult
-    });
+    };
+    
+    return NextResponse.json(JSON.parse(JSON.stringify(responseData)));
 
   } catch (error) {
     console.error('타임캡슐 생성 오류:', error);

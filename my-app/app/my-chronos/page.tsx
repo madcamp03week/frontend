@@ -559,16 +559,11 @@ useEffect(() => {
                     <td className="px-6 py-4 text-sm text-center text-gray-300 w-12 whitespace-nowrap">{index + 1}</td>
                     <td className="px-6 py-4 text-sm text-white font-medium w-40 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
-                        {chronos.imageUrl && (
-                          <img 
-                            src={chronos.imageUrl} 
-                            alt={chronos.name}
-                            className="w-8 h-8 rounded-lg object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
+                        <img 
+                          src={chronos.isOpened ? "/opened.png" : "/unopened.png"}
+                          alt={chronos.isOpened ? "열린 Chronos" : "닫힌 Chronos"}
+                          className="w-8 h-8 rounded-lg object-cover"
+                        />
                         <div>
                           <div className="truncate max-w-[140px]">{chronos.name}</div>
                           {chronos.tokenId && (

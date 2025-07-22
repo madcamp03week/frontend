@@ -101,14 +101,16 @@ export async function POST(request: NextRequest) {
       txHashes.push(receipt.transactionHash);
     }
 
-    // 9) 성공 응답
-    return NextResponse.json({
+    // 9) 성공 응답 - Set 객체나 복잡한 객체를 순수한 객체로 변환
+    const responseData = {
       success: true,
       tokenId,
       contractAddress,
       recipients,
       txHashes
-    });
+    };
+    
+    return NextResponse.json(JSON.parse(JSON.stringify(responseData)));
 
   } catch (err: any) {
     console.error('🚨 /api/my-chronos/send 에러', err);

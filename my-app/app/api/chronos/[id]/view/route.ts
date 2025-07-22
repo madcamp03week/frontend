@@ -42,8 +42,11 @@ export async function GET(request: NextRequest) {
     // isEncrypted와 uploadedFileInfos 콘솔 출력
     console.log('isEncrypted:', chronosData.isEncrypted);
     console.log('uploadedFileInfos:', chronosData.uploadedFileInfos);
-    // 실제로는 반환하지 않고 204 No Content
-    return NextResponse.json(chronosData, { status: 200 });
+    
+    // Set 객체나 복잡한 객체를 순수한 객체로 변환
+    const sanitizedData = JSON.parse(JSON.stringify(chronosData));
+    
+    return NextResponse.json(sanitizedData, { status: 200 });
   } catch (e: any) {
     console.error(e);
     return new NextResponse('Internal Server Error', { status: 500 });

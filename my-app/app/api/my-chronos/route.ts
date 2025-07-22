@@ -185,9 +185,12 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // Set 객체나 복잡한 객체를 순수한 객체로 변환
+    const sanitizedData = JSON.parse(JSON.stringify(chronosListWithOpenDate));
+    
     return NextResponse.json({
       success: true,
-      data: chronosListWithOpenDate,
+      data: sanitizedData,
       stats: {
         total: chronosListWithOpenDate.length,
         timeCapsules: timeCapsuleAssets.length,

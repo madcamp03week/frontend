@@ -444,13 +444,56 @@ useEffect(() => {
   };
 
   // 암호 입력 후 파일 리스트로 전환
-  const handlePasswordSubmit = () => {
+  const handlePasswordSubmit = async () => {
     if (!fileModalPassword || fileModalPassword.length < 6) {
       setFileModalError('비밀번호는 최소 6자 이상이어야 합니다.');
       return;
     }
-    setFileModalPasswordStep('list');
-    setFileModalError(null);
+    
+    // 실제 파일 복호화 테스트로 비밀번호 검증
+    try {
+      if (fileModalFiles.length > 0) {
+        const testFile = fileModalFiles[0];
+        const cid = testFile.ipfsUrl.split('/').pop();
+        const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
+        const url = `${gateway}${cid}`;
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+
+        function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+          return new Promise((resolve, reject) => {
+            const blob = new Blob([buffer]);
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const target = e.target as FileReader | null;
+              if (!target) {
+                reject(new Error("FileReader target is null"));
+                return;
+              }
+              const dataUrl = target.result;
+              if (typeof dataUrl !== "string") {
+                reject(new Error("FileReader result is not a string"));
+                return;
+              }
+              const base64 = dataUrl.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        const base64String = await arrayBufferToBase64(arrayBuffer);
+        await decryptFile(base64String, fileModalPassword);
+        
+        // 복호화 성공 시 파일 리스트로 전환
+        setFileModalPasswordStep('list');
+        setFileModalError(null);
+      }
+    } catch (e: any) {
+      setFileModalError('비밀번호가 틀렸습니다. 다시 입력해주세요.');
+      setFileModalPassword(''); // 비밀번호 입력창 초기화
+    }
   };
 
   return (
@@ -917,15 +960,16 @@ useEffect(() => {
       {/* 본문 */}
       {fileModalLoading ? (
         <div className="text-white">불러오는 중...</div>
-      ) : fileModalError ? (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center space-x-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{fileModalError}</span>
-        </div>
       ) : fileModalIsEncrypted && fileModalPasswordStep === 'input' ? (
-        <div className="space-y-4">
+        <div className="space-y-4 flex flex-col items-center">
+          {fileModalError && (
+            <div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{fileModalError}</span>
+            </div>
+          )}
           <input
             type="password"
             placeholder="파일 암호 입력 (최소 6자)"
@@ -935,7 +979,7 @@ useEffect(() => {
           />
           <button
             onClick={handlePasswordSubmit}
-            className="w-full px-6 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 font-medium rounded-lg transition-all duration-300"
+            className="w-24 h-10 px-6 py-3 bg-gradient-to-r from-purple-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-purple-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 font-medium rounded-lg transition-all duration-300 flex items-center justify-center"
           >확인</button>
         </div>
       ) : (
@@ -949,9 +993,9 @@ useEffect(() => {
                   <div className="flex-1 min-w-0 text-white text-base whitespace-nowrap truncate mr-4" title={file.name || file.cid}>{file.name || file.cid}</div>
                   <button
                     onClick={() => {handleDownloadFile(file); console.log('file', file)}}
-                    className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-sm flex items-center"
+                    className="ml-4 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-xs flex items-center"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
                     </svg>
                     다운로드
@@ -962,10 +1006,6 @@ useEffect(() => {
           )}
         </div>
       )}
-      <button
-        onClick={() => setShowFileModal(false)}
-        className="mt-6 w-32 py-2 text-sm bg-gradient-to-r from-gray-500/20 to-gray-600/20 hover:from-gray-500/30 hover:to-gray-600/30 border border-gray-500/30 hover:border-gray-400/50 text-gray-300 hover:text-gray-200 rounded-lg transition-all duration-300 mx-auto block"
-      >닫기</button>
     </div>
   </div>
 )}

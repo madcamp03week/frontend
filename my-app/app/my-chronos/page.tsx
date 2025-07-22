@@ -946,7 +946,7 @@ useEffect(() => {
             <ul className="space-y-3 text-base">
               {fileModalFiles.map((file: any, idx: number) => (
                 <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-10 py-4">
-                  <span className="text-white text-base">{file.name || file.cid}</span>
+                  <div className="flex-1 min-w-0 text-white text-base whitespace-nowrap truncate mr-4" title={file.name || file.cid}>{file.name || file.cid}</div>
                   <button
                     onClick={() => {handleDownloadFile(file); console.log('file', file)}}
                     className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-sm flex items-center"

@@ -29,8 +29,12 @@ export async function GET(req: NextRequest) {
     // userId → displayName 매핑
     const userMap: Record<string, string> = {};
     await Promise.all(userIds.map(async (uid) => {
-      const userDoc = await adminDb.collection('users').doc(uid).get();
-      userMap[uid] = userDoc.exists && userDoc.data().displayName ? userDoc.data().displayName : uid.slice(0, 6) + '...';
+      const userDocRef = adminDb.collection('users').doc(uid);
+      const userDoc = await userDocRef.get();
+      const userData = userDoc.exists && userDoc.data ? userDoc.data() : undefined;
+      userMap[uid] = userData && userData.displayName
+        ? userData.displayName
+        : uid.slice(0, 6) + '...';
     }));
     const data = await Promise.all(snapshot.docs.map(async docSnap => {
       const chronosId = docSnap.id;

@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import Navigation from "../../components/Navigation";
 import { useAuth } from '../../contexts/AuthContext';
 
-type UserMap = { [userId: string]: { displayName: string } };
-
 export default function CommunityPage() {
   const [topChronos, setTopChronos] = useState<any[]>([]);
   const [latestChronos, setLatestChronos] = useState<any[]>([]);
@@ -14,8 +12,6 @@ export default function CommunityPage() {
   const { user, wallets } = useAuth();
   // 잔고 관련 상태
   const [tokenBalance, setTokenBalance] = useState<number>(0);      // CHRONOS 토큰 잔액
-  const [polBalance, setPolBalance]     = useState<string>('0.00'); // POL 잔액
-  const [estimatedPolBalance, setEstimatedPolBalance] = useState<string>('0.00'); // 예상 POL 잔액
   const [loadingBalances, setLoadingBalances] = useState(false);
   // userMap, displayName fetch 관련 코드 제거
 
@@ -60,7 +56,6 @@ export default function CommunityPage() {
       if (dataToken.success) {
         const amount = Number(dataToken.balance);
         setTokenBalance(amount);
-        setEstimatedPolBalance((amount / 1000).toFixed(2));
       }
       // POL 잔액 조회
       const resPol = await fetch('/api/wallet/balance', {
@@ -70,7 +65,6 @@ export default function CommunityPage() {
       });
       const dataPol = await resPol.json();
       if (dataPol.success) {
-        setPolBalance(Number(dataPol.balance).toFixed(2));
       }
     } catch (err) {
       console.error('잔액 조회 오류:', err);
@@ -292,8 +286,8 @@ export default function CommunityPage() {
                           >
                             {displayName}
                           </span>
-                          <span>생성: {createdAtStr}</span>
-                          <span>열림: {openDateStr}</span>
+                          <span>생성일: {createdAtStr}</span>
+                          <span>오픈일: {openDateStr}</span>
                           <button
                             className="flex items-center gap-1 mt-3 px-2 py-1 rounded-full border-none focus:outline-none transition"
                             disabled={isMine || alreadyLiked}

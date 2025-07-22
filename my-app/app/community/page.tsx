@@ -118,13 +118,14 @@ export default function CommunityPage() {
     }
     try {
       const idToken = await user.getIdToken();
+      console.log('wallets?.find(w => w.isActive)?.address', wallets?.find(w => w.isActive)?.address);
       const res = await fetch('/api/community/like', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`,
         },
-        body: JSON.stringify({ chronosId }),
+        body: JSON.stringify({ chronosId, likerAddress: wallets?.find(w => w.isActive)?.address }),
       });
       const data = await res.json();
       if (res.ok) {

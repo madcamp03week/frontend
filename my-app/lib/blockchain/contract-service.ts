@@ -2,12 +2,14 @@ import { ethers } from 'ethers';
 import { CONTRACT_ABI } from '../contract-abi';
 import { uploadIPFSMetadata } from './ipfs-service';
 import { CHRONOS_TOKEN_CONTRACT_ABI } from '../contract-abi';
+import { CHRONOS_DAO_ABI } from '../contract-abi';
 
 const INFURA_URL = process.env.INFURA_URL;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 const CHRONOS_TOKEN_CONTRACT_ADDR = process.env.CHRONOS_TOKEN_CONTRACT_ADDR;
+const CHRONOS_DAO_CONTRACT_ADDR = process.env.CHRONOS_DAO_CONTRACT_ADDR;
 
 export async function createTimeCapsuleOnBlockchain(data: {
   name: string;
@@ -26,9 +28,10 @@ export async function createTimeCapsuleOnBlockchain(data: {
     fileType: string;
     isEncrypted: boolean;
   }>;
+  writerAddress: string; // 작성자 주소 추가
 }) {
   try {
-    const { name, description, openDate, recipients, isTransferable = true, isSmartContractTransferable = true, isSmartContractOpenable = true, isEncrypted = false, encryptedFiles = [] } = data;
+    const { name, description, openDate, recipients, isTransferable = true, isSmartContractTransferable = true, isSmartContractOpenable = true, isEncrypted = false, encryptedFiles = [], writerAddress } = data;
     const defaultRecipients = [
       '0x38d41fd88833e17970128e91684cC9A0ec47D905',
       '0x07F5aE3b58c04aea68e5C41c2AA0522DE90Ab99D'
@@ -44,6 +47,10 @@ export async function createTimeCapsuleOnBlockchain(data: {
     }
     if (!PRIVATE_KEY) throw new Error('서비스 지갑 개인키가 설정되지 않았습니다.');
     if (!CONTRACT_ADDRESS) throw new Error('스마트컨트랙트 주소가 설정되지 않았습니다.');
+    if (!writerAddress || !ethers.isAddress(writerAddress)) {
+      throw new Error('유효하지 않은 작성자 주소입니다.');
+    }
+    if (!CHRONOS_DAO_CONTRACT_ADDR) throw new Error('DAO 컨트랙트 주소가 설정되지 않았습니다.');
     const ipfsResult = await uploadIPFSMetadata({
       name,
       description,
@@ -83,12 +90,25 @@ export async function createTimeCapsuleOnBlockchain(data: {
         }
       }
     }
+    // setWriter 호출
+    let setWriterTxHash = null;
+    let setWriterBlockNumber = null;
+    if (tokenId) {
+      const daoContract = new ethers.Contract(CHRONOS_DAO_CONTRACT_ADDR, CHRONOS_DAO_ABI, serviceWallet);
+      const setWriterTx = await daoContract.setWriter(tokenId, writerAddress);
+      const setWriterReceipt = await setWriterTx.wait();
+      setWriterTxHash = setWriterReceipt.hash;
+      setWriterBlockNumber = Number(setWriterReceipt.blockNumber);
+      console.log('setWriterTxHash', setWriterTxHash);
+    }
     return {
       success: true,
       tokenId: tokenId,
       contractAddress: CONTRACT_ADDRESS,
       transactionHash: receipt.hash,
       blockNumber: Number(receipt.blockNumber),
+      setWriterTxHash,
+      setWriterBlockNumber,
       ipfsMetadata: {
         unopenedCid: ipfsResult.unopenedIpfsMetadataCid,
         openedCid: ipfsResult.openedIpfsMetadataCid,

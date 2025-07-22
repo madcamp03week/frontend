@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       chronosRef,
       where('isPublic', '==', true),
       orderBy('createdAt', 'desc'),
-      limit(10)
+      limit(6)
     );
     const snapshot = await getDocs(q);
     // userId 목록 추출

@@ -229,11 +229,11 @@ export default function CommunityPage() {
               </div>
               {/* 가능한 Up 횟수 (오른쪽) */}
               <div className="flex flex-col items-center justify-center min-w-[180px] mt-8 md:mt-0">
-                <p className="text-base text-cyan-300 mb-2 font-semibold tracking-wide">가능 Up 횟수</p>
+                <p className="text-base text-cyan-300 mb-2 font-semibold tracking-wide">보유 토큰</p>
                 <p className="text-4xl font-extrabold text-white mb-2 drop-shadow-lg">
-                  {tokenBalance.toLocaleString()}<span className="text-lg text-cyan-400 font-bold ml-2">회</span>
+                  {tokenBalance.toLocaleString()}<span className="text-lg text-cyan-400 font-bold ml-2">CR</span>
                 </p>
-                <p className="text-xs text-gray-400 mt-1">(보유 토큰 1개 = Up 1회)</p>
+                <p className="text-xs text-gray-400 mt-1">(보유 토큰 1CR = Up 1회)</p>
               </div>
             </div>
           </div>

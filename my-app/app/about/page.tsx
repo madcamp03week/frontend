@@ -589,7 +589,9 @@ export default function AboutPage() {
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 border border-white/30 rounded-full font-normal text-lg hover:bg-white/10 transition-all duration-300"
             >
-              백서 다운로드
+              <a href="https://docs.google.com/document/d/1lvlMC5n6CqTN3O_s72CnIBVhSBevfCvDSJa9_1Wh32s/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                Whitepaper 확인하기
+              </a>
             </motion.button>
           </motion.div>
         </div>

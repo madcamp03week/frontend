@@ -4,6 +4,7 @@ import { motion, Variants } from 'framer-motion';
 import Link from 'next/link';
 import SubscribeFooter from '@/components/SubscribeFooter';
 import Navigation from '@/components/Navigation';
+import { useEffect, useState } from 'react';
 
 // Animation variants
 const letterVariants: Variants = {
@@ -70,13 +71,25 @@ function AnimatedText({ text, className = '' }: { text: string; className?: stri
 }
 
 function CryptoParticles() {
+  const [positions, setPositions] = useState<{ left: number; top: number }[]>([]);
+
+  useEffect(() => {
+    // 클라이언트에서만 실행됨
+    setPositions(
+      Array.from({ length: 20 }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+      }))
+    );
+  }, []);
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(20)].map((_, i) => (
+      {positions.map((pos, i) => (
         <motion.div
           key={i}
           className="absolute w-2 h-2 bg-cyan-400 rounded-full"
-          style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+          style={{ left: `${pos.left}%`, top: `${pos.top}%` }}
           animate={{
             x: [0, Math.random() * 100 - 50],
             y: [0, Math.random() * 100 - 50],

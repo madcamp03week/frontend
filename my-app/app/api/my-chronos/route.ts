@@ -176,13 +176,15 @@ export async function GET(request: NextRequest) {
     // 온체인 메타데이터에서 openDate 병합
     const chronosListWithOpenDate = await Promise.all(
       chronosList.map(async (nft) => {
+        let finalOpenDate;
+        let finalIsOpened;
         try {
           // 먼저 IPFS에서 openDate 조회
           const { openDate: ipfsOpenDate, isOpened: ipfsIsOpened } = await fetchOpenDateByTokenId(nft.tokenId);
 
           // IPFS에서 가져온 openDate가 유효하지 않으면 Firestore에서 조회
-          let finalOpenDate = ipfsOpenDate || nft.openDate;
-          let finalIsOpened = ipfsIsOpened; 
+          finalOpenDate = ipfsOpenDate || nft.openDate;
+          finalIsOpened = ipfsIsOpened; 
           
           if (!finalOpenDate) {
             console.log(`🔍 IPFS에서 openDate를 찾을 수 없어 Firestore에서 조회 시도: ${nft.tokenId}`);
@@ -194,7 +196,10 @@ export async function GET(request: NextRequest) {
           return { ...nft, openDate: finalOpenDate, isOpened: finalIsOpened };
         } catch (e) {
           console.error(`❌ ${nft.tokenId}의 openDate 조회 중 오류:`, e);
-          return nft;
+          const { openDate: dbOpenDate, isOpened: dbIsOpened } = await getOpenDateByTokenId(nft.tokenId);
+          finalOpenDate = dbOpenDate;
+          finalIsOpened = dbIsOpened;
+          return { ...nft, openDate: finalOpenDate, isOpened: finalIsOpened };
         }
       })
     );

@@ -649,7 +649,7 @@ useEffect(() => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300 w-40 whitespace-nowrap">
                       <div>
-                        <div>{chronos.openDate ? new Date(chronos.openDate).toLocaleString('ko-KR') : '날짜 미정'}</div>
+                        <div>{chronos.openDate ? new Date(chronos.openDate).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')}</div>
                         <div className="text-xs text-gray-400 mt-1">
                           {chronos.openDate ? (() => {
                             const today = new Date();

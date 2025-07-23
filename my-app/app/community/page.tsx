@@ -93,8 +93,8 @@ export default function CommunityPage() {
       if (!res.ok) throw new Error('파일 정보를 불러오지 못했습니다.');
       const data = await res.json();
       
-      // 검사 1: openDate가 현재 시간 이후인지 확인
-      if (data.openDate && new Date(data.openDate) > new Date()) {
+      // 검사 1: status가 opened가 아니면 열리지 않은 타임캡슐로 간주
+      if (data.status !== 'opened') {
         setFileModalError('아직 열리지 않은 타임캡슐입니다.');
         setFileModalLoading(false);
         return;

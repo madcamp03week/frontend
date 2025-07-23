@@ -129,6 +129,7 @@ async function getChronosDataByTokenId(tokenId: string, maxRetries: number = 3) 
       
       // DB에서 가져온 정보가 있으면 우선 사용, 없으면 메타데이터에서 추출
       return {
+        status: dbChronosData?.status || 'active',
         name: metadata.name,
         description: metadata.description,
         openDate: metadata.attributes?.find((a: any) => a.trait_type === 'Open Date')?.value || null,

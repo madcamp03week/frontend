@@ -4,7 +4,7 @@ import { firestore } from '../../../../lib/firebase';
 import { getAuth } from 'firebase-admin/auth';
 import { adminDb } from '../../../../lib/firebase-admin';
 
-// 인기 chronos 5개 반환 API
+// 인기 chronos 6개 반환 API
 export async function GET(req: NextRequest) {
   try {
     let userId = null;

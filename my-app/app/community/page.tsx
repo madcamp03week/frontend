@@ -11,6 +11,8 @@ export default function CommunityPage() {
   const [topChronos, setTopChronos] = useState<any[]>([]);
   const [latestChronos, setLatestChronos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingTop, setLoadingTop] = useState(false);
+  const [loadingLatest, setLoadingLatest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, wallets } = useAuth();
   // 잔고 관련 상태
@@ -83,6 +85,64 @@ export default function CommunityPage() {
     }
   }, [user, wallets]);
 
+  // 인기 Chronos 데이터 새로고침 함수
+  const refreshTopChronos = async () => {
+    setLoadingTop(true);
+    setError(null);
+    try {
+      let headers: any = {};
+      if (user) {
+        const idToken = await user.getIdToken();
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+      const res = await fetch("/api/community/top-chronos", { headers });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setTopChronos(data.data || []);
+        } else {
+          setError(data.error || '인기 Chronos 데이터를 불러오는 중 오류가 발생했습니다.');
+        }
+      } else {
+        setError('인기 Chronos 데이터를 불러오는 중 오류가 발생했습니다.');
+      }
+    } catch (err) {
+      setError('네트워크 오류가 발생했습니다.');
+    } finally {
+      setLoadingTop(false);
+    }
+  };
+
+  // 최신 Chronos 데이터 새로고침 함수
+  const refreshLatestChronos = async () => {
+    setLoadingLatest(true);
+    setError(null);
+    try {
+      let headers: any = {};
+      if (user) {
+        const idToken = await user.getIdToken();
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+      const res = await fetch("/api/community/latest-chronos", { headers });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setLatestChronos(data.data || []);
+        } else {
+          setError(data.error || '최신 Chronos 데이터를 불러오는 중 오류가 발생했습니다.');
+        }
+      } else {
+        setError('최신 Chronos 데이터를 불러오는 중 오류가 발생했습니다.');
+      }
+    } catch (err) {
+      setError('네트워크 오류가 발생했습니다.');
+    } finally {
+      setLoadingLatest(false);
+    }
+  };
+
   // API fetch 시 Authorization 헤더 추가
   useEffect(() => {
     async function fetchData() {
@@ -131,6 +191,8 @@ export default function CommunityPage() {
     if (!likeTargetId || !likeTargetType) return;
     setLikeLoading(true);
     await handleLike(likeTargetId, likeTargetType);
+    // Like 처리 후 보유 토큰 API 다시 호출
+    await fetchBalances();
     setLikeLoading(false);
     setLikeModalOpen(false);
   };
@@ -270,9 +332,32 @@ export default function CommunityPage() {
               </div>
               {/* 가능한 Up 횟수 (오른쪽) */}
               <div className="flex flex-col items-center justify-center min-w-[180px] mt-8 md:mt-0">
-                <p className="text-base text-cyan-300 mb-2 font-semibold tracking-wide">보유 토큰</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-base text-cyan-300 font-semibold tracking-wide">보유 토큰</p>
+                  <button
+                    onClick={fetchBalances}
+                    disabled={loadingBalances}
+                    className="p-1.5 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="잔액 새로고침"
+                  >
+                    <svg 
+                      className={`w-4 h-4 text-gray-400 hover:text-cyan-400 transition-colors ${loadingBalances ? 'animate-spin' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
                 <p className="text-4xl font-extrabold text-white mb-2 drop-shadow-lg">
-                  {tokenBalance.toLocaleString()}<span className="text-lg text-cyan-400 font-bold ml-2">CR</span>
+                  {loadingBalances ? (
+                    <span className="text-2xl text-cyan-400"> </span>
+                  ) : (
+                    <>
+                      {tokenBalance.toLocaleString()}<span className="text-lg text-cyan-400 font-bold ml-2">CR</span>
+                    </>
+                  )}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">(보유 토큰 1CR = Up 1회)</p>
               </div>
@@ -288,8 +373,23 @@ export default function CommunityPage() {
           <>
             {/* 상단: 인기 Chronos */}
             <section className="mb-12">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
                 인기 Chronos
+                <button
+                  onClick={refreshTopChronos}
+                  disabled={loadingTop}
+                  className="p-1.5 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="인기 Chronos 새로고침"
+                >
+                  <svg 
+                    className={`w-4 h-4 text-gray-400 hover:text-cyan-400 transition-colors ${loadingTop ? 'animate-spin' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </h2>
               {topChronos.length === 0 ? (
                 <div className="text-gray-400">공개된 인기 Chronos가 없습니다.</div>
@@ -360,8 +460,23 @@ export default function CommunityPage() {
 
             {/* 하단: 최신 Chronos */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4 flex items-center">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
                 최신 Chronos
+                <button
+                  onClick={refreshLatestChronos}
+                  disabled={loadingLatest}
+                  className="p-1.5 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="최신 Chronos 새로고침"
+                >
+                  <svg 
+                    className={`w-4 h-4 text-gray-400 hover:text-cyan-400 transition-colors ${loadingLatest ? 'animate-spin' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </h2>
               {latestChronos.length === 0 ? (
                 <div className="text-gray-400">공개된 최신 Chronos가 없습니다.</div>

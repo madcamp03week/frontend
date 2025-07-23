@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         openDate,
         likedByMe,
         likeCount,
-        displayName: chronosData.userId ? userMap[chronosData.userId] : ''
+        displayName: chronosData.userId ? userMap[chronosData.userId] : 'Guest'
       };
     }));
     return NextResponse.json({ success: true, data });

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 민팅 실행 (10 토큰)
-    const mintAmount = BigInt('10000000000000000000'); // 10 * 10^18
+    const mintAmount = BigInt('15000000000000000000'); // 10 * 10^18
     const result = await mintChronosToken(address, mintAmount);
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });

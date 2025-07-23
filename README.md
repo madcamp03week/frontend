@@ -6,7 +6,7 @@
 |팀원|github|
 |------|---|
 |박재현|https://github.com/reproducepark|
-|황광호|https://github.com/tlsdl6942|
+|황광호|[https://github.com/Hwang9170|
 
 ### 소개
 > Chronos는 디지털 타임캡슐 플랫폼입니다.

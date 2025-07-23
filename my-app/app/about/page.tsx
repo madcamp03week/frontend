@@ -235,7 +235,7 @@ export default function AboutPage() {
           >
             <span className="relative z-10 tracking-wide flex items-center">
           
-              Chrons 만들러 가기
+              Chronos 만들러 가기
             </span>
           </Link>
         </motion.div>

@@ -143,7 +143,7 @@ export default function Home() {
         >
           <span className="relative z-10 tracking-wide flex items-center">
         
-            Chrons 만들러 가기
+            Chronos 만들러 가기
           </span>
         </Link>
       </section>

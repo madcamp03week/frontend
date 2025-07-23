@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import WarningModal from "../../components/WarningModal";
 import LikeConfirmModal from "../../components/LikeConfirmModal";
 import LoginRequired from '../../components/LoginRequired';
+import { decryptFile } from '../../lib/crypto';
 
 export default function CommunityPage() {
   const [topChronos, setTopChronos] = useState<any[]>([]);
@@ -25,6 +26,19 @@ export default function CommunityPage() {
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
 
+  // 파일 모달 관련 Hook들 (my-chronos에서 가져온 기능)
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [fileModalLoading, setFileModalLoading] = useState(false);
+  const [fileModalTokenId, setFileModalTokenId] = useState<string>('');
+  const [fileModalFiles, setFileModalFiles] = useState<any[]>([]);
+  const [fileModalIsEncrypted, setFileModalIsEncrypted] = useState<boolean>(false);
+  const [fileModalPassword, setFileModalPassword] = useState<string>('');
+  const [fileModalPasswordStep, setFileModalPasswordStep] = useState<'input'|'list'>('input');
+  const [fileModalError, setFileModalError] = useState<string|null>(null);
+  const [fileModalTextContent, setFileModalTextContent] = useState<string>('');
+  const [fileModalShowText, setFileModalShowText] = useState<boolean>(false);
+  const [fileModalChronosInfo, setFileModalChronosInfo] = useState<any>(null);
+
   // 닉네임 클릭 시 지갑 주소 fetch
   const handleNameClick = async (userId: string) => {
     setWalletLoading(true);
@@ -42,6 +56,203 @@ export default function CommunityPage() {
       setWalletError('네트워크 오류');
     } finally {
       setWalletLoading(false);
+    }
+  };
+
+  // 텍스트 파일인지 확인하는 함수 (첫 번째 파일은 항상 .txt)
+  const isTextFile = (fileName: string): boolean => {
+    return fileName.toLowerCase().endsWith('.txt');
+  };
+
+  // 텍스트 파일 내용을 가져오는 함수
+  const fetchTextFileContent = async (fileInfo: any): Promise<string> => {
+    const cid = fileInfo.ipfsUrl.split('/').pop();
+    const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
+    const url = `${gateway}${cid}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('파일을 불러올 수 없습니다.');
+    return await response.text();
+  };
+
+  // 파일 보기 버튼 클릭 핸들러
+  const handleViewFiles = async (tokenId: string) => {
+    setFileModalTokenId(tokenId);
+    setShowFileModal(true);
+    setFileModalLoading(true);
+    setFileModalFiles([]);
+    setFileModalIsEncrypted(false);
+    setFileModalPassword('');
+    setFileModalPasswordStep('input');
+    setFileModalError(null);
+    setFileModalTextContent('');
+    setFileModalShowText(false);
+    setFileModalChronosInfo(null);
+    
+    try {
+      const res = await fetch(`/api/chronos/${tokenId}/view`);
+      if (!res.ok) throw new Error('파일 정보를 불러오지 못했습니다.');
+      const data = await res.json();
+      
+      // 검사 1: openDate가 현재 시간 이후인지 확인
+      if (data.openDate && new Date(data.openDate) > new Date()) {
+        setFileModalError('아직 열리지 않은 타임캡슐입니다.');
+        setFileModalLoading(false);
+        return;
+      }
+      
+      // 검사 2: isEncrypted가 true인지 확인
+      if (data.isEncrypted) {
+        setFileModalError('암호화된 타인의 타임캡슐은 확인할 수 없습니다.');
+        setFileModalLoading(false);
+        return;
+      }
+      
+      setFileModalChronosInfo({
+        name: data.name,
+        description: data.description,
+        openDate: data.openDate
+      });
+      setFileModalIsEncrypted(!!data.isEncrypted);
+      setFileModalFiles(data.uploadedFileInfos || []);
+      
+      if (!data.isEncrypted) {
+        setFileModalPasswordStep('list');
+        // 암호화되지 않은 파일이고 첫 번째 파일이 .txt 파일인 경우 내용을 미리 가져오기
+        if (data.uploadedFileInfos && data.uploadedFileInfos.length > 0) {
+          const firstFile = data.uploadedFileInfos[0];
+          try {
+            const textContent = await fetchTextFileContent(firstFile);
+            setFileModalTextContent(textContent);
+            setFileModalShowText(true);
+          } catch (e: any) {
+            console.log('텍스트 파일 내용 가져오기 실패:', e.message);
+            setFileModalShowText(false);
+          }
+        }
+      } else {
+        setFileModalPasswordStep('input');
+      }
+    } catch (e: any) {
+      setFileModalError(e.message || '파일 정보를 불러오지 못했습니다.');
+    } finally {
+      setFileModalLoading(false);
+    }
+  };
+
+  // 파일 다운로드 핸들러
+  const handleDownloadFile = async (fileInfo: any) => {
+    const cid = fileInfo.ipfsUrl.split('/').pop();
+    try {
+      if (!fileModalIsEncrypted) {
+        // 암호화 안된 파일: 바로 다운로드
+        const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
+        const url = `${gateway}${cid}`;
+        console.log('url', url);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('파일 다운로드 실패');
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = fileInfo.name || 'file';
+        a.click();
+      } else {
+        // 암호화된 파일: 다운로드 후 복호화
+        if (!fileModalPassword || fileModalPassword.length < 6) {
+          setFileModalError('비밀번호를 입력하세요.');
+          return;
+        }
+        const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
+        const url = `${gateway}${cid}`;
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+
+        function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+          return new Promise((resolve, reject) => {
+            const blob = new Blob([buffer]);
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const target = e.target as FileReader | null;
+              if (!target) {
+                reject(new Error("FileReader target is null"));
+                return;
+              }
+              const dataUrl = target.result;
+              if (typeof dataUrl !== "string") {
+                reject(new Error("FileReader result is not a string"));
+                return;
+              }
+              const base64 = dataUrl.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        const base64String = await arrayBufferToBase64(arrayBuffer);
+        console.log('base64String', base64String);
+
+        const { file } = await decryptFile(base64String, fileModalPassword);
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(file);
+        a.download = file.name;
+        a.click();
+      }
+    } catch (e: any) {
+      setFileModalError(e.message || '다운로드 실패');
+    }
+  };
+
+  // 암호 입력 후 파일 리스트로 전환
+  const handlePasswordSubmit = async () => {
+    if (!fileModalPassword || fileModalPassword.length < 6) {
+      setFileModalError('비밀번호는 최소 6자 이상이어야 합니다.');
+      return;
+    }
+    
+    // 실제 파일 복호화 테스트로 비밀번호 검증
+    try {
+      if (fileModalFiles.length > 0) {
+        const testFile = fileModalFiles[0];
+        const cid = testFile.ipfsUrl.split('/').pop();
+        const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
+        const url = `${gateway}${cid}`;
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+
+        function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+          return new Promise((resolve, reject) => {
+            const blob = new Blob([buffer]);
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const target = e.target as FileReader | null;
+              if (!target) {
+                reject(new Error("FileReader target is null"));
+                return;
+              }
+              const dataUrl = target.result;
+              if (typeof dataUrl !== "string") {
+                reject(new Error("FileReader result is not a string"));
+                return;
+              }
+              const base64 = dataUrl.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        const base64String = await arrayBufferToBase64(arrayBuffer);
+        await decryptFile(base64String, fileModalPassword);
+        
+        // 복호화 성공 시 파일 리스트로 전환
+        setFileModalPasswordStep('list');
+        setFileModalError(null);
+      }
+    } catch (e: any) {
+      setFileModalError('비밀번호가 틀렸습니다. 다시 입력해주세요.');
+      setFileModalPassword(''); // 비밀번호 입력창 초기화
     }
   };
 
@@ -298,6 +509,153 @@ export default function CommunityPage() {
         cancelText="취소"
       />
 
+             {/* 파일 보기 모달 */}
+       {showFileModal && (
+         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+           <div className="bg-gray-800/80 border border-purple-500/60 rounded-2xl p-8 max-w-lg w-full mx-4">
+             <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center space-x-3">
+                 <div className="w-7 h-7 bg-purple-400/20 border border-purple-500/60 shadow-[0_0_8px_0_rgba(168,85,247,0.15)] rounded-xl flex items-center justify-center">
+                   <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                   </svg>
+                 </div>
+                 <div>
+                   <h3 className="text-xl font-bold text-white">타임캡슐 내용 보기</h3>
+                   <p className="text-purple-200/80 text-xs">첨부된 파일을 확인하고 다운로드할 수 있습니다</p>
+                 </div>
+               </div>
+               <button onClick={() => setShowFileModal(false)} className="w-8 h-8 border border-purple-500/60 rounded-lg flex items-center justify-center transition-colors hover:border-purple-400 hover:text-purple-200">
+                 <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                 </svg>
+               </button>
+             </div>
+             
+             {/* 타임캡슐 정보 표시 */}
+             {fileModalChronosInfo && (
+               <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                 <h4 className="text-lg font-semibold text-white mb-2">{fileModalChronosInfo.name}</h4>
+                 <p className="text-purple-200 text-sm mb-2">{fileModalChronosInfo.description}</p>
+                 <p className="text-purple-200 text-xs">오픈일: {fileModalChronosInfo.openDate ? new Date(fileModalChronosInfo.openDate).toLocaleDateString('ko-KR') : '없음'}</p>
+               </div>
+             )}
+             
+             {/* 본문 */}
+             {fileModalLoading ? (
+               <div className="flex flex-col items-center justify-center py-12">
+                 <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-full flex items-center justify-center">
+                   <svg className="w-8 h-8 text-white animate-spin-reverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                   </svg>
+                 </div>
+                 <p className="text-gray-300 text-lg">블록체인에서 정보 가져오는 중...</p>
+               </div>
+             ) : fileModalError === '아직 열리지 않은 타임캡슐입니다.' ? (
+               <div className="w-full p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-sm flex items-center space-x-2 justify-center min-h-[40px]">
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                 </svg>
+                 <span>{fileModalError}</span>
+               </div>
+             ) : fileModalIsEncrypted && fileModalPasswordStep === 'input' ? (
+               <div className="space-y-4 flex flex-col items-center">
+                 {fileModalError && (
+                   <div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center space-x-2">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                     </svg>
+                     <span>{fileModalError}</span>
+                   </div>
+                 )}
+                 <input
+                   type="password"
+                   placeholder="파일 암호 입력 (최소 6자)"
+                   value={fileModalPassword}
+                   onChange={e => setFileModalPassword(e.target.value)}
+                   className="w-full px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                 />
+                 <button
+                   onClick={handlePasswordSubmit}
+                   className="w-24 h-10 px-6 py-3 bg-gradient-to-r from-purple-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-purple-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 font-medium rounded-lg transition-all duration-300 flex items-center justify-center"
+                 >확인</button>
+               </div>
+             ) : (
+               <div>
+                 {fileModalError && (
+                   <div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center space-x-2 mb-4">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                     </svg>
+                     <span>{fileModalError}</span>
+                   </div>
+                 )}
+                 
+                 {fileModalFiles.length === 0 ? (
+                   <div className="text-gray-400">첨부된 파일이 없습니다.</div>
+                 ) : (
+                   <div className="space-y-4">
+                     {/* 첫 번째 파일이 .txt 파일이고 내용을 표시하는 경우 */}
+                     {fileModalShowText && fileModalFiles.length > 0 && (
+                       <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                         <div 
+                           className="max-h-32 overflow-y-auto"
+                           style={{
+                             scrollbarWidth: 'thin',
+                             scrollbarColor: '#4B5563 #1F2937'
+                           }}
+                         >
+                           <pre className="text-sm text-gray-300 whitespace-pre-wrap break-words">{fileModalTextContent}</pre>
+                           <style jsx>{`
+                             div::-webkit-scrollbar {
+                               width: 6px;
+                             }
+                             div::-webkit-scrollbar-track {
+                               background: #1F2937;
+                               border-radius: 3px;
+                             }
+                             div::-webkit-scrollbar-thumb {
+                               background: #4B5563;
+                               border-radius: 3px;
+                             }
+                             div::-webkit-scrollbar-thumb:hover {
+                               background: #6B7280;
+                             }
+                           `}</style>
+                         </div>
+                       </div>
+                     )}
+                     
+                     {/* 파일 리스트 */}
+                     <ul className="space-y-3 text-base">
+                       {fileModalFiles.map((file: any, idx: number) => (
+                         // 암호화되지 않은 경우 첫 번째 파일(.txt)은 리스트에서 제외
+                         !(!fileModalIsEncrypted && idx === 0) && (
+                           <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-10 py-4">
+                             <div className="flex-1 min-w-0 text-white text-base whitespace-nowrap truncate mr-4" title={file.name || file.cid}>{file.name || file.cid}</div>
+                             <div className="flex items-center space-x-2">
+                               <button
+                                 onClick={() => {handleDownloadFile(file); console.log('file', file)}}
+                                 className="px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-xs flex items-center"
+                               >
+                                 <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                                 </svg>
+                                 다운로드
+                               </button>
+                             </div>
+                           </li>
+                         )
+                       ))}
+                     </ul>
+                   </div>
+                 )}
+               </div>
+             )}
+           </div>
+         </div>
+       )}
+
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent animate-pulse">
           Chronos DAO
@@ -402,7 +760,11 @@ export default function CommunityPage() {
                     const createdAtStr = chronos.createdAt ? (new Date(chronos.createdAt.seconds ? chronos.createdAt.seconds * 1000 : chronos.createdAt).toLocaleDateString('ko-KR').replace(/\./g, '.').replace(/\s/g, '')) : '-';
                     const openDateStr = chronos.openDate ? (new Date(chronos.openDate.seconds ? chronos.openDate.seconds * 1000 : chronos.openDate).toLocaleDateString('ko-KR').replace(/\./g, '.').replace(/\s/g, '')) : '-';
                     return (
-                      <div key={chronos.id || idx} className="relative bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 flex flex-col md:flex-row gap-3 hover:scale-[1.02] transition-transform">
+                      <div 
+                        key={chronos.id || idx} 
+                        className="relative bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 flex flex-col md:flex-row gap-3 hover:scale-[1.02] transition-transform cursor-pointer"
+                        onClick={() => handleViewFiles(chronos.tokenId)}
+                      >
                         {/* 왼쪽: 제목, 태그, 설명 */}
                         <div className="flex-1 flex flex-col justify-between">
                           {/* 제목 */}
@@ -423,7 +785,10 @@ export default function CommunityPage() {
                           <span
                             className="font-semibold cursor-pointer underline hover:text-cyan-400"
                             title="지갑 주소 보기"
-                            onClick={() => handleNameClick(chronos.userId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNameClick(chronos.userId);
+                            }}
                           >
                             {displayName}
                           </span>
@@ -432,7 +797,10 @@ export default function CommunityPage() {
                           <button
                             className="flex items-center gap-1 mt-3 px-2 py-1 rounded-full border-none focus:outline-none transition"
                             disabled={isMine || alreadyLiked}
-                            onClick={() => openLikeModal(chronos.id, 'top')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLikeModal(chronos.id, 'top');
+                            }}
                             aria-label="좋아요"
                           >
                             <svg
@@ -489,7 +857,11 @@ export default function CommunityPage() {
                     const createdAtStr = chronos.createdAt ? (new Date(chronos.createdAt.seconds ? chronos.createdAt.seconds * 1000 : chronos.createdAt).toLocaleDateString('ko-KR').replace(/\./g, '.').replace(/\s/g, '')) : '-';
                     const openDateStr = chronos.openDate ? (new Date(chronos.openDate.seconds ? chronos.openDate.seconds * 1000 : chronos.openDate).toLocaleDateString('ko-KR').replace(/\./g, '.').replace(/\s/g, '')) : '-';
                     return (
-                      <div key={chronos.id || idx} className="relative bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 flex flex-col md:flex-row gap-3 hover:scale-[1.02] transition-transform">
+                      <div 
+                        key={chronos.id || idx} 
+                        className="relative bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 flex flex-col md:flex-row gap-3 hover:scale-[1.02] transition-transform cursor-pointer"
+                        onClick={() => handleViewFiles(chronos.tokenId)}
+                      >
                         {/* 왼쪽: 제목, 태그, 설명 */}
                         <div className="flex-1 flex flex-col justify-between">
                           {/* 제목 */}
@@ -510,7 +882,10 @@ export default function CommunityPage() {
                           <span
                             className="font-semibold cursor-pointer underline hover:text-cyan-400"
                             title="지갑 주소 보기"
-                            onClick={() => handleNameClick(chronos.userId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNameClick(chronos.userId);
+                            }}
                           >
                             {displayName}
                           </span>
@@ -519,7 +894,10 @@ export default function CommunityPage() {
                           <button
                             className="flex items-center gap-1 mt-3 px-2 py-1 rounded-full border-none focus:outline-none transition"
                             disabled={isMine || alreadyLiked}
-                            onClick={() => openLikeModal(chronos.id, 'latest')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLikeModal(chronos.id, 'latest');
+                            }}
                             aria-label="좋아요"
                           >
                             <svg

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '../../../lib/firebase-admin';
 import { adminDb } from '../../../lib/firebase-admin';
 import { fetchOpenDateByTokenId } from '@/lib/blockchain/fetch-metadata';
+import { getOpenDateByTokenId } from '@/lib/firestore';
 
 interface OpenSeaV2NFT {
   identifier: string;
@@ -176,10 +177,23 @@ export async function GET(request: NextRequest) {
     const chronosListWithOpenDate = await Promise.all(
       chronosList.map(async (nft) => {
         try {
-          const { openDate, isOpened } = await fetchOpenDateByTokenId(nft.tokenId);
-          console.log('🔍 openDate:', openDate);
-          return { ...nft, openDate: openDate || nft.openDate, isOpened };
+          // 먼저 IPFS에서 openDate 조회
+          const { openDate: ipfsOpenDate, isOpened: ipfsIsOpened } = await fetchOpenDateByTokenId(nft.tokenId);
+
+          // IPFS에서 가져온 openDate가 유효하지 않으면 Firestore에서 조회
+          let finalOpenDate = ipfsOpenDate || nft.openDate;
+          let finalIsOpened = ipfsIsOpened; 
+          
+          if (!finalOpenDate) {
+            console.log(`🔍 IPFS에서 openDate를 찾을 수 없어 Firestore에서 조회 시도: ${nft.tokenId}`);
+            const { openDate: dbOpenDate, isOpened: dbIsOpened } = await getOpenDateByTokenId(nft.tokenId);
+            finalOpenDate = dbOpenDate || finalOpenDate;
+            finalIsOpened = dbIsOpened !== null ? dbIsOpened : finalIsOpened;
+          }
+
+          return { ...nft, openDate: finalOpenDate, isOpened: finalIsOpened };
         } catch (e) {
+          console.error(`❌ ${nft.tokenId}의 openDate 조회 중 오류:`, e);
           return nft;
         }
       })

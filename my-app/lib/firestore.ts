@@ -270,4 +270,37 @@ export const getUserWithWallets = async (uid: string) => {
     console.error('사용자 및 지갑 정보 조회 오류:', error);
     throw new Error('사용자 및 지갑 정보를 조회할 수 없습니다.');
   }
+};
+
+// Chronos 데이터에서 tokenId로 openDate 조회
+export const getOpenDateByTokenId = async (tokenId: string): Promise<{ openDate: string | null, isOpened: boolean | null }> => {
+  try {
+    console.log('🔍 Firestore에서 tokenId로 openDate 조회 시도:', tokenId);
+    const chronosRef = collection(firestore, 'chronos');
+    const q = query(chronosRef, where('tokenId', '==', tokenId));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
+      console.log('✅ Firestore에서 chronos 데이터 찾음:', data);
+      
+      return {
+        openDate: data.openDate ? data.openDate.toDate().toISOString() : null,
+        isOpened: data.status === 'opened' ? true : false
+      };
+    } else {
+      console.log('❌ Firestore에서 해당 tokenId의 chronos 데이터를 찾을 수 없음:', tokenId);
+      return {
+        openDate: null,
+        isOpened: null
+      };
+    }
+  } catch (error) {
+    console.error('❌ Firestore에서 openDate 조회 오류:', error);
+    return {
+      openDate: null,
+      isOpened: null
+    };
+  }
 }; 

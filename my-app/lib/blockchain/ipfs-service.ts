@@ -8,7 +8,7 @@ const pinata = new PinataClient({
 // 재시도 로직을 위한 헬퍼 함수
 async function retryOperation<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 3,
+  maxRetries: number = 5,
   delayMs: number = 1000
 ): Promise<T> {
   let lastError: Error;
@@ -24,7 +24,7 @@ async function retryOperation<T>(
         console.log(`[IPFS 재시도] ${delayMs}ms 후 재시도합니다...`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
         // 재시도 간격을 점진적으로 증가 (지수 백오프)
-        delayMs *= 1.5;
+        delayMs *= 2;
       }
     }
   }

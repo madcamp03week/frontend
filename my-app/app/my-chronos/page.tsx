@@ -58,6 +58,8 @@ export default function MyChronosPage() {
   const [fileModalPassword, setFileModalPassword] = useState<string>('');
   const [fileModalPasswordStep, setFileModalPasswordStep] = useState<'input'|'list'>('input');
   const [fileModalError, setFileModalError] = useState<string|null>(null);
+  const [fileModalTextContent, setFileModalTextContent] = useState<string>('');
+  const [fileModalShowText, setFileModalShowText] = useState<boolean>(false);
   const [showOpenResultModal, setShowOpenResultModal] = useState(false);
   const activeWallet = (cachedUserInfo?.wallets || wallets).find(
     (w: any) => w.isActive
@@ -351,6 +353,21 @@ useEffect(() => {
   // 활성 지갑 주소
   const walletAddress = activeWallet ? activeWallet.address : "지갑이 없습니다";
 
+  // 텍스트 파일인지 확인하는 함수 (첫 번째 파일은 항상 .txt)
+  const isTextFile = (fileName: string): boolean => {
+    return fileName.toLowerCase().endsWith('.txt');
+  };
+
+  // 텍스트 파일 내용을 가져오는 함수
+  const fetchTextFileContent = async (fileInfo: any): Promise<string> => {
+    const cid = fileInfo.ipfsUrl.split('/').pop();
+    const gateway = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/';
+    const url = `${gateway}${cid}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('파일을 불러올 수 없습니다.');
+    return await response.text();
+  };
+
   // 파일 보기 버튼 클릭 핸들러
   const handleViewFiles = async (tokenId: string) => {
     setFileModalTokenId(tokenId);
@@ -361,6 +378,8 @@ useEffect(() => {
     setFileModalPassword('');
     setFileModalPasswordStep('input');
     setFileModalError(null);
+    setFileModalTextContent('');
+    setFileModalShowText(false);
     try {
       const res = await fetch(`/api/chronos/${tokenId}/view`);
       if (!res.ok) throw new Error('파일 정보를 불러오지 못했습니다.');
@@ -369,6 +388,18 @@ useEffect(() => {
       setFileModalFiles(data.uploadedFileInfos || []);
       if (!data.isEncrypted) {
         setFileModalPasswordStep('list');
+        // 암호화되지 않은 파일이고 첫 번째 파일이 .txt 파일인 경우 내용을 미리 가져오기
+        if (data.uploadedFileInfos && data.uploadedFileInfos.length > 0) {
+          const firstFile = data.uploadedFileInfos[0];
+          try {
+            const textContent = await fetchTextFileContent(firstFile);
+            setFileModalTextContent(textContent);
+            setFileModalShowText(true);
+          } catch (e: any) {
+            console.log('텍스트 파일 내용 가져오기 실패:', e.message);
+            setFileModalShowText(false);
+          }
+        }
       } else {
         setFileModalPasswordStep('input');
       }
@@ -947,7 +978,7 @@ useEffect(() => {
             </svg>
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">타임캡슐 파일 보기</h3>
+            <h3 className="text-xl font-bold text-white">타임캡슐 내용 보기</h3>
             <p className="text-purple-200/80 text-xs">첨부된 파일을 확인하고 다운로드할 수 있습니다</p>
           </div>
         </div>
@@ -987,22 +1018,61 @@ useEffect(() => {
           {fileModalFiles.length === 0 ? (
             <div className="text-gray-400">첨부된 파일이 없습니다.</div>
           ) : (
-            <ul className="space-y-3 text-base">
-              {fileModalFiles.map((file: any, idx: number) => (
-                <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-10 py-4">
-                  <div className="flex-1 min-w-0 text-white text-base whitespace-nowrap truncate mr-4" title={file.name || file.cid}>{file.name || file.cid}</div>
-                  <button
-                    onClick={() => {handleDownloadFile(file); console.log('file', file)}}
-                    className="ml-4 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-xs flex items-center"
-                  >
-                    <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
-                    </svg>
-                    다운로드
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-4">
+                            {/* 첫 번째 파일이 .txt 파일이고 내용을 표시하는 경우 */}
+              {fileModalShowText && fileModalFiles.length > 0 && (
+                                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                    <div 
+                      className="max-h-32 overflow-y-auto"
+                      style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#4B5563 #1F2937'
+                      }}
+                    >
+                      <pre className="text-sm text-gray-300 whitespace-pre-wrap break-words">{fileModalTextContent}</pre>
+                      <style jsx>{`
+                        div::-webkit-scrollbar {
+                          width: 6px;
+                        }
+                        div::-webkit-scrollbar-track {
+                          background: #1F2937;
+                          border-radius: 3px;
+                        }
+                        div::-webkit-scrollbar-thumb {
+                          background: #4B5563;
+                          border-radius: 3px;
+                        }
+                        div::-webkit-scrollbar-thumb:hover {
+                          background: #6B7280;
+                        }
+                      `}</style>
+                    </div>
+                  </div>
+              )}
+              
+              {/* 파일 리스트 */}
+              <ul className="space-y-3 text-base">
+                {fileModalFiles.map((file: any, idx: number) => (
+                  // 암호화되지 않은 경우 첫 번째 파일(.txt)은 리스트에서 제외
+                  !(!fileModalIsEncrypted && idx === 0) && (
+                    <li key={file.cid || idx} className="flex items-center justify-between bg-gray-800 border border-white/10 rounded-lg px-10 py-4">
+                      <div className="flex-1 min-w-0 text-white text-base whitespace-nowrap truncate mr-4" title={file.name || file.cid}>{file.name || file.cid}</div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {handleDownloadFile(file); console.log('file', file)}}
+                          className="px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/30 hover:border-purple-400/50 text-purple-300 hover:text-purple-200 rounded-lg transition-all duration-300 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 text-xs flex items-center"
+                        >
+                          <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                          </svg>
+                          다운로드
+                        </button>
+                      </div>
+                    </li>
+                  )
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
